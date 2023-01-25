@@ -25,11 +25,15 @@ all_deps<-readRDS("C:/Users/francis van oordt/OneDrive - McGill University/Docum
 #SUMMAGPSshort<-read.csv("C:/Users/franc/OneDrive - McGill University/Documents/McGill/00Res Prop v2/Chap 2 - Tracks and overlap/SUMMAGPSshort.csv") #file without 1-5 pointer trips, no outliers in duration, NO trips less than 5km from Col
 
 
-#SUMMAGPS_1trip<-read.csv("C:/Users/franc/OneDrive - McGill University/Documents/McGill/00Res Prop v2/Chap 2 - Tracks and overlap/SUMMAGPS_1trip.csv")
+#SUMMAGPS_1trip<-read.csv("C:/Users/francis van oordt/OneDrive - McGill University/Documents/McGill/00Res Prop v2/Chap 2 - Tracks and overlap/SUMMAGPS_1trip.csv")
 
 
-#is  SUMMAGPS and Sinuosity
-#glmm_tests<-readRDS("C:/Users/franc/OneDrive - McGill University/Documents/McGill/00Res Prop v2/Chap 2 - Tracks and overlap/glmm_tests.RDS")
+#is  SUMMAGPS and Sinuosity both species
+#glmm_tests<-readRDS("C:/Users/francis van oordt/OneDrive - McGill University/Documents/McGill/00Res Prop v2/Chap 2 - Tracks and overlap/glmm_tests.RDS")
+
+#glmm_with PCA already both species
+glmm_tests<-readRDS("C:/Users/francis van oordt/OneDrive - McGill University/Documents/McGill/00Res Prop v2/Chap 2 - Tracks and overlap/glmm_testsPCA.RDS")
+
 
 #LMM model
 # Full model: log10_TotalTime ~ lo10_MaxDistColony-SCALED + logTOTAL PATH_SCALED + TORT + Spec + Year + Year*Spec + (individual)

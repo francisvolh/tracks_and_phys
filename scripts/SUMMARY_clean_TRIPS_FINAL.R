@@ -10,24 +10,22 @@ library(GGally)
 
 #get data Fixed: no Chuita, no null deployment COR09, 2 points added for 2 last 1-trips
 #ALSO BELOW, SO SKIP all the following code to produce unique_trip_ids
-gps.data<-readRDS("C:/Users/francis van oordt/OneDrive - McGill University/Documents/McGill/Field data/gps_data_seabiRdsFIXED.RDS")
+gps.data<-readRDS("data/gps_data_seabiRdsFIXED.RDS")
 
 #seabirds deployment file
-dep_dataPeru<-readRDS("C:/Users/franc/OneDrive - McGill University/Documents/McGill/Field data/dep_dataPeru_seabiRds.RDS")
+dep_dataPeru<-readRDS("data/dep_dataPeru_seabiRds.RDS")
 
 
 # TO SKIP if loading fixed data
-#get rid of the one Chuita
-gps.data<-gps.data[which(gps.data$dep_id!="G19RLCO_03 20180623-155726"),]
-#get rid of non deployed COR
-gps.data<-gps.data[which(gps.data$dep_id!="G12GUCO_COR09_2019"),]
-
-#get rid of bird that sat on a rock for cam deployment
-gps.data<-gps.data[which(gps.data$dep_id!="C02PEBO_20191112_A150_S2"),]
+#clean some birds out 
+gps.data<-gps.data %>% 
+  filter(dep_id != "C02PEBO_20191112_A150_S2") %>% #sat on a rock for cam dep
+  filter(dep_id != "G19RLCO_03 20180623-155726") %>% #Chuita
+  filter(dep_id != "G12GUCO_COR09_2019") #non functional deployed Ecotone COR09
 
 
-#gps.data<-gps.data[which(gps.data$dep_id=="A21PEBO_19112019_A104"),]
-#gps.data<-gps.data[which(gps.data$time>"2019-11-18 16:57:06"),]
+#gps.data<-gps.data[which(gps.data$dep_id=="A21PEBO_19112019_A104"),] # select a  bird to check stuff
+#gps.data<-gps.data[which(gps.data$time>"2019-11-18 16:57:06"),] # select a  bird to check stuff
 
 #produce YEAR and SPECIES variables 
 #filter out very short bursts of GPS fixes for both species
@@ -38,7 +36,7 @@ gps.data <- gps.data %>%
 #clean data again with speeds less than 80km/h (with seabiRds)
 gps.data <- cleanGPSData(data = as.data.frame(gps.data),
                                deployments = dep_dataPeru,
-                                speedThreshold = 110, ##ACTIVATE for FINAL SUMMAGPS
+                                speedThreshold = 81, ##ACTIVATE for FINAL SUMMAGPS
                                plot = FALSE) #81 km/h treshold kills about 37 fast points
 
 #produce YEAR and SPECIES variables 
@@ -47,11 +45,10 @@ gps.data <- cleanGPSData(data = as.data.frame(gps.data),
 gps.data <- gps.data %>% 
   mutate(
     species = substring(dep_id, 4, 7),
-    #time = lubridate::with_tz(time,tz = "America/Lima"), #### ACTIVATE FOR FINAL SUMMAGPS
+    time = lubridate::with_tz(time,tz = "America/Lima"), #### ACTIVATE FOR FINAL SUMMAGPS
     year = lubridate::year(time),
     day = lubridate::day(time))# %>%  
-  #filter(!(dt <= (1/120) & species == "GUCO"))
-
+    filter(!(dt <= (1/360) & species == "GUCO"))#filter out very short bursts of GPS fixes for GUCOs (leaving the ones for PEBOs as are insignificant)
 
 
 #produce labels for in_trip and trip_id ONLY without cleaning ANYTHING
@@ -200,7 +197,7 @@ SUMMAGPS <- gps.data %>%
 
 
 
-#clean out trips less than 5 GPS points MAY NEED TO INCREASE for RST
+#clean out trips less than 10 GPS points MAY NEED TO INCREASE for RST
 SUMMAGPS <- SUMMAGPS[which(!SUMMAGPS$steps <= 10),]
 
 #nrow(SUMMAGPS)
@@ -251,16 +248,19 @@ SUMMAGPS <- SUMMAGPS[which(!SUMMAGPS$maxdist < 5 ),]
 a<-SUMMAGPS %>%
   filter(Spec == "GUCO") %>%
   group_by(dep_id) %>% 
-  filter(trip_id == min(trip_id))
+  filter(trip_id == min(trip_id)) #closest to sampling for GUCO
 
 b<-SUMMAGPS %>%
   filter(Spec == "PEBO") %>%
   group_by(dep_id) %>% 
-  filter(trip_id == max(trip_id))
+  filter(trip_id == max(trip_id)) #closest to sampling for PEBO
 
 SUMMAGPS_1trip<-rbind(a,b)
 
 #saveRDS(SUMMAGPS_1trip, file = "C:/Users/franc/OneDrive - McGill University/Documents/McGill/00Res Prop v2/Chap 2 - Tracks and overlap/SUMMAGPS_1tripFULL.RDS") #only 1 trip per bird
+
+xxx <- readRDS("C:/Users/francis van oordt/OneDrive - McGill University/Documents/McGill/00Res Prop v2/Chap 2 - Tracks and overlap/SUMMAGPS_1tripFULL.RDS") #only 1 trip per bird
+
 
 SUMMAGPS_1tripFULL #all trips including overnight
 SUMMAGPS_1trip # excluding overnights

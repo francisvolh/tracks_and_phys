@@ -8,6 +8,17 @@ library(cowplot)
 
 theme_set(theme_light())
 
+# from SUMMARY_clean_TRIPS_FINAL
+#SUMMAGPS_1trip<-readRDS(file = "C:/Users/franc/OneDrive - McGill University/Documents/McGill/00Res Prop v2/Chap 2 - Tracks and overlap/SUMMAGPS_1tripFULL.RDS") #only 1 trip per bird
+
+#glmm_tests_post<-merge(SUMMAGPS, all_deps_post, by.x="dep_id", by.y="dp_ID", all=TRUE)
+
+#uniques_1<-unique(SUMMAGPS_1trip$unique_trip)
+
+#glmm_Test_2spPOST1<-glmm_tests %>% 
+ # filter(unique_trip %in% uniques_1)
+
+
 #ONLY WITH 1 last trip (not mean trips)
 #physiology and mean trip values
 glmm_Test_2spPOST1<-readRDS("C:/Users/francis van Oordt/OneDrive - McGill University/Documents/McGill/00Res Prop v2/Chap 2 - Tracks and overlap/glmm_post1PEBO.RDS")

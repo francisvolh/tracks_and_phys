@@ -1,49 +1,36 @@
 library(move)
 
-moveobject2<-readRDS("moveobject2.RDS")
+#clean run for CC with all birds, 10 steps per trips (previous run had 30 and lost 4 birds/trips)
+moveobject<-readRDS("data/moveobjectALL.RDS")
 
-
-moveobject2<-spTransform(moveobject2, center=T)
-e<-extent(moveobject2)+200000
-ras<-raster(e, resolution=300, crs=crs(moveobject2))
+moveobject<-spTransform(moveobject, center=T)
+e<-extent(moveobject)+200000
+ras<-raster(e, resolution=300, crs=crs(moveobject))
 UDS <- list()
-for (i in seq_len(nrow(idData(moveobject2)))) {
-  
-  indiv<-moveobject2[[i]]
-  
+for (i in seq_len(nrow(idData(moveobject)))) {
+  indiv<-moveobject[[i]]
   #trip_id<-paste(indiv$trip_id[-1], sep='_', timeLag(indiv, units='mins')<60)
-  
   #indivB <- burst(x=indiv, f=trip_id)
-  
   #indivB <- burst(indiv,indiv$unique_trip[-n.locs(indiv)])
-  
-  
   # not bursting because it is only 1 segment per individual
-  dBBindiv <- brownian.bridge.dyn(indiv, raster=ras, location.error=5
+  dBBindiv <- brownian.bridge.dyn(indiv, raster=ras, location.error=5, margin= 5, window.size = 11
                                   # , burstType=grep(value=T, 'TRUE', unique(burstId(indivB)))
   ) 
-  
   name00<-as.character(idData(indiv)[9])
-  
   dBBindiv$layer@data@names<-name00
-  
   UDS[[i]] <-dBBindiv
 }
-
-
 #plot(UDS[[2]]) #check UDs for each bursted individual
-
 rasterStack<-stack(UDS)
 sum(cellStats(rasterStack, sum))
 
 system.time({
   emdDists <- emd(rasterStack / cellStats(rasterStack, sum))
-  
-})
+  })
 
-saveRDS(emdDists, "emdDistsBCKP.RDS")
+saveRDS(emdDists, "emdDistsBCKPALL.RDS")
 
-emdDists<-readRDS(file.choose())
+#emdDists<-readRDS(file.choose())
 
 library(ape)
 oneclust<-hclust(emdDists, method = "ward.D2")
@@ -56,13 +43,13 @@ p<-plot(
   # tip.color = c("red","blue")[grepl('day',tree$tip.label) + 1],
   label.offset = 0.01)
 
-saveRDS(p, "plotemd.RDS")
+saveRDS(p, "plotemdALL.RDS")
 
 groups <- cutree(oneclust, h = 50000)
 
 
 
-groups <- as.data.frame(group)
+groups <- as.data.frame(groups)
 
 table(groups$group)
 groups[which(groups$group == 4),]
@@ -77,7 +64,7 @@ head(groups)
 groups$Trip_ID2<-gsub("\\.", "-", groups$Trip_ID2)
 head(groups)
 
-
+library(tidyverse)
 emd.gps <- gps.data %>% 
   filter(unique_trip %in% unique(groups$Trip_ID2))
 
@@ -91,8 +78,8 @@ emd.gps <- emd.gps %>%
 
   ggplot() +
   geom_path(data=emd.gps, aes(x = lon, y = lat, 
-                               linetype=as.factor(group),
-                              color = as.factor(group)
+                               linetype=as.factor(groups),
+                              color = as.factor(groups)
                                ), 
              cex= 0.5) +
   xlab("Longitude")+
@@ -110,5 +97,91 @@ emd.gps <- emd.gps %>%
 #legend.justification = c(1,1),
 #legend.text = element_text(size = 15)
 
-plot
+
 unique(emd.gps$unique_trip)
+
+#merge emd groups with phys data
+emd.phys <- merge(glmm_Test_2spPOST1, groups, by.x="unique_trip", by.y="Trip_ID2", all=TRUE)
+
+##NEED TO FIX, some trips are missing in the EMD for some reason
+#glu
+phystestsGLUP1 <- emd.phys %>% 
+  dplyr::select(glu ,tri , chol,  ket, PC1, sinuos, Spec, Year, latency, dep_id, groups) %>% 
+  filter(!is.na(glu)) %>% 
+  filter(!is.na(groups)) %>% 
+  filter(Spec == "PEBO")
+
+options(na.action = "na.omit")
+reg0 <- lm(log(glu) ~ 1, data = phystestsGLUP1)
+reg1 <- lm(log(glu) ~ as.factor(groups),  data = phystestsGLUP1)
+
+
+options(na.action = "na.fail")
+aic_lmGluP<-MuMIn::model.sel(reg0, reg1)
+
+aic_lmGluP
+
+ggplot(phystestsGLUP1)+
+  geom_boxplot(aes(x=as.factor(groups), y = log(glu), col = as.factor(groups)))
+
+#chol
+phystestsCHOL1 <- emd.phys %>% 
+  dplyr::select(glu ,tri , chol,  ket, PC1, sinuos, Spec, Year, latency, dep_id, groups) %>% 
+  filter(!is.na(chol)) %>% 
+  filter(!is.na(groups)) %>% 
+  filter(Spec == "PEBO")
+
+options(na.action = "na.omit")
+reg0 <- lm(log(chol) ~ 1, data = phystestsCHOL1)
+reg1 <- lm(log(chol) ~ as.factor(groups),  data = phystestsCHOL1)
+
+
+options(na.action = "na.fail")
+aic_lmCholP<-MuMIn::model.sel(reg0, reg1)
+
+aic_lmCholP
+
+ggplot(phystestsCHOL1)+
+  geom_boxplot(aes(x=as.factor(groups), y = log(chol), col = as.factor(groups)))
+
+#tri
+phystestsTRI1 <- emd.phys %>% 
+  dplyr::select(glu ,tri , chol,  ket, PC1, sinuos, Spec, Year, latency, dep_id, groups) %>% 
+  filter(!is.na(tri)) %>% 
+  filter(!is.na(groups)) %>% 
+  filter(Spec == "PEBO")
+
+options(na.action = "na.omit")
+reg0 <- lm(log(tri) ~ 1, data = phystestsTRI1)
+reg1 <- lm(log(tri) ~ as.factor(groups),  data = phystestsTRI1)
+
+
+options(na.action = "na.fail")
+aic_lmTriP<-MuMIn::model.sel(reg0, reg1)
+
+aic_lmTriP
+
+ggplot(phystestsTRI1)+
+  geom_boxplot(aes(x=as.factor(groups), y = log(tri), col = as.factor(groups)))
+
+
+#tri
+phystestsKET1 <- emd.phys %>% 
+  dplyr::select(glu ,tri , chol,  ket, PC1, sinuos, Spec, Year, latency, dep_id, groups) %>% 
+  filter(!is.na(ket)) %>% 
+  filter(!is.na(groups)) %>% 
+  filter(Spec == "PEBO")
+
+options(na.action = "na.omit")
+reg0 <- lm(log(ket) ~ 1, data = phystestsKET1)
+reg1 <- lm(log(ket) ~ as.factor(groups),  data = phystestsKET1)
+
+
+options(na.action = "na.fail")
+aic_lmTriP<-MuMIn::model.sel(reg0, reg1)
+
+aic_lmTriP
+summary(reg1)
+
+ggplot(phystestsKET1)+
+  geom_boxplot(aes(x=as.factor(groups), y = log(tri), col = as.factor(groups)))
