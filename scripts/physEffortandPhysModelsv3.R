@@ -62,6 +62,7 @@ aic_lmGluP
 
 summary(reg2)
 summary(reg1)
+summary(reg0)
 
 ggplot(phystestsGLUP1, aes(y = log(glu), x =  log(sinuos))) + geom_point()
 ggplot(phystestsGLUP1, aes(y = log(glu), x =  PC1)) + geom_point()
@@ -115,6 +116,7 @@ ggplot(phystestsCHOLP1, aes(y = log(chol), x =  log(sinuos))) + geom_point()
 ggplot(phystestsCHOLP1, aes(y = log(chol), x =  PC1)) + geom_point()
 
 summary(reg4)
+summary(reg2)
 opar <- par(mfrow = c(2,2), oma = c(0, 0, 1.1, 0))
 plot(reg1)
 par(opar)

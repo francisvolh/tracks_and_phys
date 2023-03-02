@@ -56,7 +56,7 @@ glmm_tests <- glmm_tests %>%
     log_TotDist = log(totdist)
   ) 
 
-#saveRDS(glmm_tests, "C:/Users/franc/OneDrive - McGill University/Documents/McGill/00Res Prop v2/Chap 2 - Tracks and overlap/glmm_testsMods.RDS")
+#saveRDS(glmm_tests, "C:/Users/francis van oordt/OneDrive - McGill University/Documents/McGill/00Res Prop v2/Chap 2 - Tracks and overlap/glmm_testsMods.RDS")
 
 glmm_tests<-readRDS("C:/Users/francis van Oordt/OneDrive - McGill University/Documents/McGill/00Res Prop v2/Chap 2 - Tracks and overlap/glmm_tests.RDS")
 
