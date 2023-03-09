@@ -1,7 +1,7 @@
 library(move)
 
 #clean run for CC with all birds, 10 steps per trips (previous run had 30 and lost 4 birds/trips)
-moveobject<-readRDS("data/moveobjectALL.RDS")
+moveobject<-readRDS("data/moveobjectALL.RDS") # all contains 56 trips, it didnt have enough time with 15days
 
 moveobject<-spTransform(moveobject, center=T)
 e<-extent(moveobject)+200000
@@ -30,7 +30,7 @@ system.time({
 
 saveRDS(emdDists, "emdDistsBCKPALL.RDS")
 
-#emdDists<-readRDS(file.choose())
+emdDists<-readRDS(file.choose())
 
 library(ape)
 oneclust<-hclust(emdDists, method = "ward.D2")
@@ -50,8 +50,17 @@ groups <- cutree(oneclust, h = 50000)
 
 
 groups <- as.data.frame(groups)
+groups$species <- stringr::str_sub(groups$Trip_ID, 4,7)
 
-table(groups$group)
+# Extract the year if it is 2021
+groups$year <- ifelse(grepl("2018", groups$Trip_ID),
+       "2018",
+       "2019")
+
+
+table(groups$group, groups$species)
+table(groups$year, groups$species)
+
 groups[which(groups$group == 4),]
 
 groups$Trip_ID <- rownames(groups)
@@ -63,6 +72,9 @@ groups$Trip_ID2<-gsub("._trip_.", " _trip_ ", groups$Trip_ID)
 head(groups)
 groups$Trip_ID2<-gsub("\\.", "-", groups$Trip_ID2)
 head(groups)
+
+
+
 
 library(tidyverse)
 emd.gps <- gps.data %>% 
@@ -76,7 +88,7 @@ head(emd.gps)
 emd.gps <- emd.gps %>% 
   filter(!is.na(lon)) 
 
-  ggplot() +
+p <-  ggplot() +
   geom_path(data=emd.gps, aes(x = lon, y = lat, 
                                linetype=as.factor(groups),
                               color = as.factor(groups)
@@ -86,7 +98,9 @@ emd.gps <- emd.gps %>%
   ylab("Latitude")+
   geom_sf(data = world, aes()) + #+ #add basemap
   coord_sf(crs = 4326, xlim = range(emd.gps$lon), ylim = range(emd.gps$lat)
-           )#+
+           )
+  
+  #+
   #scale_shape_manual(values=c(0, 1, 5, 6))#+xlim = range(toplot$lon), ylim = range(toplot$lat)
 
  #annotate(geom="text", x=-78.6, y=-8.4, label="2018", size= 13,
@@ -97,12 +111,136 @@ emd.gps <- emd.gps %>%
 #legend.justification = c(1,1),
 #legend.text = element_text(size = 15)
 
+p+  guides(color=guide_legend(title="EMD Cluster"))+
+  guides(linetype="none")
 
 unique(emd.gps$unique_trip)
 
 #merge emd groups with phys data
 emd.phys <- merge(glmm_Test_2spPOST1, groups, by.x="unique_trip", by.y="Trip_ID2", all=TRUE)
 
+
+#attempting a regression with 
+
+#make emd average object
+reg_emd <- emdDists
+class(reg_emd)
+reg_emd <- as.matrix(reg_emd)
+reg_emd <- as.data.frame(reg_emd)
+
+
+rownames(reg_emd) <-1:nrow(reg_emd)
+
+reg_emd <- reg_emd %>% 
+  mutate(replace(reg_emd, reg_emd == 0.00, "NA"))
+
+reg_emd <- reg_emd %>%
+  pivot_longer(!c("Trip_ID", "Trip_ID2"), names_to = "unique_trip", values_to = "emd_dist")
+
+
+mean_emds <- reg_emd %>%
+  select(unique_trip, emd_dist) %>% 
+  mutate(
+    emd_dist = as.numeric(emd_dist)
+  ) %>% 
+  group_by(unique_trip) %>% 
+  summarise(
+    meanEMD = mean(emd_dist, na.rm=TRUE)
+  )
+
+mean_emds<-as.data.frame(mean_emds)
+
+mean_emds$unique_trip <- gsub("._trip_.", " _trip_ ", mean_emds$unique_trip)
+
+mean_emds$unique_trip<-gsub("\\.", "-", mean_emds$unique_trip)
+head(mean_emds)
+View(mean_emds)
+
+#physiology and mean trip values
+glmm_Test_2spPOST1<-readRDS("C:/Users/francis van Oordt/OneDrive - McGill University/Documents/McGill/00Res Prop v2/Chap 2 - Tracks and overlap/glmm_post1PEBO.RDS")
+
+
+emd.means_phys <- merge(glmm_Test_2spPOST1, mean_emds, by.x="unique_trip", by.y="unique_trip", all=TRUE)
+
+head(emd.means_phys)
+
+#glu reg
+phystestsGLU <- emd.means_phys %>% 
+  dplyr::select(glu ,tri , chol,  ket, PC1, sinuos, Spec, Year, latency, dep_id, meanEMD) %>% 
+  filter(!is.na(glu)) %>% 
+  filter(!is.na(meanEMD))
+
+options(na.action = "na.omit")
+reg0 <- lm(log(glu) ~ 1, data = phystestsGLU)
+reg1 <- lm(log(glu) ~ log(meanEMD),  data = phystestsGLU)
+options(na.action = "na.fail")
+aic_lmGlu<-MuMIn::model.sel(reg0, reg1)
+aic_lmGlu
+
+A<-ggplot(phystestsGLU)+
+  geom_point(aes(x=log(meanEMD), y = log(glu)))+
+  geom_smooth(method="lm", aes(x=log(meanEMD), y = log(glu) ))
+
+
+
+#chol reg
+phystestsCHOL <- emd.means_phys %>% 
+  dplyr::select(glu ,tri , chol,  ket, PC1, sinuos, Spec, Year, latency, dep_id, meanEMD) %>% 
+  filter(!is.na(chol)) %>% 
+  filter(!is.na(meanEMD))
+
+options(na.action = "na.omit")
+reg0 <- lm(log(chol) ~ 1, data = phystestsCHOL)
+reg1 <- lm(log(chol) ~ log(meanEMD),  data = phystestsCHOL)
+options(na.action = "na.fail")
+aic_lmChol<-MuMIn::model.sel(reg0, reg1)
+aic_lmChol
+
+B<-ggplot(phystestsCHOL)+
+  geom_point(aes(x=log(meanEMD), y = log(chol)))+
+  geom_smooth(method="lm", aes(x=log(meanEMD), y = log(chol) ))
+
+#tri reg
+phystestsTRI <- emd.means_phys %>% 
+  dplyr::select(glu ,tri , chol,  ket, PC1, sinuos, Spec, Year, latency, dep_id, meanEMD) %>% 
+  filter(!is.na(tri)) %>% 
+  filter(!is.na(meanEMD))
+
+options(na.action = "na.omit")
+reg0 <- lm(log(tri) ~ 1, data = phystestsTRI)
+reg1 <- lm(log(tri) ~ log(meanEMD),  data = phystestsTRI)
+options(na.action = "na.fail")
+aic_lmTri<-MuMIn::model.sel(reg0, reg1)
+aic_lmTri
+
+C<-ggplot(phystestsTRI)+
+  geom_point(aes(x=log(meanEMD), y = log(tri)))+
+  geom_smooth(method="lm", aes(x=log(meanEMD), y = log(tri) ))
+
+
+
+
+#ket reg
+phystestsKET <- emd.means_phys %>% 
+  dplyr::select(glu ,tri , chol,  ket, PC1, sinuos, Spec, Year, latency, dep_id, meanEMD) %>% 
+  filter(!is.na(ket)) %>% 
+  filter(!is.na(meanEMD))
+
+options(na.action = "na.omit")
+reg0 <- lm(log(ket) ~ 1, data = phystestsKET)
+reg1 <- lm(log(ket) ~ log(meanEMD),  data = phystestsKET)
+options(na.action = "na.fail")
+aic_lmKet<-MuMIn::model.sel(reg0, reg1)
+aic_lmKet
+
+D<-ggplot(phystestsKET)+
+  geom_point(aes(x=log(meanEMD), y = log(ket)))+
+  geom_smooth(method="lm", aes(x=log(meanEMD), y = log(ket) ))
+
+metabsRegres<-plot_grid(A, B, C, D, labels = c('A', 'B', 'C', 'D'), ncol = 2)
+
+
+#missing DF for 1 group in these comparisons
 ##NEED TO FIX, some trips are missing in the EMD for some reason
 #glu
 phystestsGLUP1 <- emd.phys %>% 
