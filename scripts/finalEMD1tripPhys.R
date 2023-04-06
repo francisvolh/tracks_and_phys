@@ -50,6 +50,7 @@ groups <- cutree(oneclust, h = 50000)
 
 
 groups <- as.data.frame(groups)
+groups$Trip_ID <- rownames(groups)
 groups$species <- stringr::str_sub(groups$Trip_ID, 4,7)
 
 # Extract the year if it is 2021
@@ -63,7 +64,7 @@ table(groups$year, groups$species)
 
 groups[which(groups$group == 4),]
 
-groups$Trip_ID <- rownames(groups)
+
 rownames(groups) <- NULL
 groups <- groups[order(groups$group), ]
 head(groups)
@@ -111,7 +112,7 @@ p <-  ggplot() +
 #legend.justification = c(1,1),
 #legend.text = element_text(size = 15)
 
-p+  guides(color=guide_legend(title="EMD Cluster"))+
+p +  guides(color=guide_legend(title="EMD Cluster"))+
   guides(linetype="none")
 
 unique(emd.gps$unique_trip)
@@ -134,8 +135,9 @@ rownames(reg_emd) <-1:nrow(reg_emd)
 reg_emd <- reg_emd %>% 
   mutate(replace(reg_emd, reg_emd == 0.00, "NA"))
 
+
 reg_emd <- reg_emd %>%
-  pivot_longer(!c("Trip_ID", "Trip_ID2"), names_to = "unique_trip", values_to = "emd_dist")
+  pivot_longer(1:ncol(reg_emd), names_to = "unique_trip", values_to = "emd_dist")
 
 
 mean_emds <- reg_emd %>%
@@ -237,7 +239,7 @@ D<-ggplot(phystestsKET)+
   geom_point(aes(x=log(meanEMD), y = log(ket)))+
   geom_smooth(method="lm", aes(x=log(meanEMD), y = log(ket) ))
 
-metabsRegres<-plot_grid(A, B, C, D, labels = c('A', 'B', 'C', 'D'), ncol = 2)
+metabsRegres<-cowplot::plot_grid(A, B, C, D, labels = c('A', 'B', 'C', 'D'), ncol = 2)
 
 
 #missing DF for 1 group in these comparisons
@@ -259,8 +261,10 @@ aic_lmGluP<-MuMIn::model.sel(reg0, reg1)
 
 aic_lmGluP
 
-ggplot(phystestsGLUP1)+
-  geom_boxplot(aes(x=as.factor(groups), y = log(glu), col = as.factor(groups)))
+A <- ggplot(phystestsGLUP1)+
+  geom_boxplot(aes(x=as.factor(groups), y = log(glu), col = as.factor(groups)))+
+  theme(legend.position = "none")+
+  xlab(NULL)
 
 #chol
 phystestsCHOL1 <- emd.phys %>% 
@@ -279,8 +283,10 @@ aic_lmCholP<-MuMIn::model.sel(reg0, reg1)
 
 aic_lmCholP
 
-ggplot(phystestsCHOL1)+
-  geom_boxplot(aes(x=as.factor(groups), y = log(chol), col = as.factor(groups)))
+B <- ggplot(phystestsCHOL1)+
+  geom_boxplot(aes(x=as.factor(groups), y = log(chol), col = as.factor(groups)))+
+  theme(legend.position = "none")+
+  xlab(NULL)
 
 #tri
 phystestsTRI1 <- emd.phys %>% 
@@ -299,8 +305,10 @@ aic_lmTriP<-MuMIn::model.sel(reg0, reg1)
 
 aic_lmTriP
 
-ggplot(phystestsTRI1)+
-  geom_boxplot(aes(x=as.factor(groups), y = log(tri), col = as.factor(groups)))
+C <- ggplot(phystestsTRI1)+
+  geom_boxplot(aes(x=as.factor(groups), y = log(tri), col = as.factor(groups)))+
+  theme(legend.position = "none")+
+  xlab("EMD Cluster")
 
 
 #tri
@@ -308,12 +316,20 @@ phystestsKET1 <- emd.phys %>%
   dplyr::select(glu ,tri , chol,  ket, PC1, sinuos, Spec, Year, latency, dep_id, groups) %>% 
   filter(!is.na(ket)) %>% 
   filter(!is.na(groups)) %>% 
-  filter(Spec == "PEBO")
+  filter(Spec == "PEBO") %>% 
+  mutate(
+    groups = as.factor(groups),
+    ket = log(ket)
+  )
+
+table(phystestsKET1$groups)
 
 options(na.action = "na.omit")
-reg0 <- lm(log(ket) ~ 1, data = phystestsKET1)
-reg1 <- lm(log(ket) ~ as.factor(groups),  data = phystestsKET1)
+reg0 <- lm((ket) ~ 1, data = phystestsKET1)
+reg1 <- lm((ket) ~ as.factor(groups),  data = phystestsKET1)
+reg1i <- aov(log(ket) ~ as.factor(groups),  data = phystestsKET1)
 
+TukeyHSD(reg1i, conf.level=.95)
 
 options(na.action = "na.fail")
 aic_lmTriP<-MuMIn::model.sel(reg0, reg1)
@@ -321,5 +337,37 @@ aic_lmTriP<-MuMIn::model.sel(reg0, reg1)
 aic_lmTriP
 summary(reg1)
 
-ggplot(phystestsKET1)+
-  geom_boxplot(aes(x=as.factor(groups), y = log(tri), col = as.factor(groups)))
+D <- ggplot(phystestsKET1)+
+  geom_boxplot(aes(x=as.factor(groups), y = log(ket), col = as.factor(groups)))+
+  theme(legend.position = "none")+
+  xlab("EMD Cluster")
+
+metabsAnova <- cowplot::plot_grid(A, B, C, D, labels = c('A', 'B', 'C', 'D'), ncol = 2)
+metabsAnova
+
+library(ggsignif)
+ggplot(data= phystestsKET1, aes(x=groups, y = log(ket), col= groups))+
+  geom_boxplot()+
+  #theme(legend.position = "none")+
+  #xlab("EMD Cluster") +
+  geom_signif(
+    comparisons = list(c("1", "2"),
+                      c("1", "3"),
+                      c("1", "4"), 
+                      c("2", "3"),
+                      c("2", "4"),
+                      c("3", "4")
+                      ),
+    y_position = c(0.5, 0.8, 1.1, 1.4, 1.7, 2), 
+    #xmin = c(0.8, 1.8), 
+    #xmax = c(1.2, 2.2),
+    #annotation = c("**", "NS"), 
+    tip_length = 0,
+    map_signif_level = TRUE, 
+    test = "TukeyHSD"
+  )#+
+    geom_signif(
+    comparisons = list(c("3", "1"))
+  )
+
+class(phystestsKET1$groups)
