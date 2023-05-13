@@ -42,6 +42,138 @@ glmm_tests<-readRDS("C:/Users/francis van oordt/OneDrive - McGill University/Doc
 #merge trip summaries with Phys Sheet including sinuosity info a V1
 glmm_tests<-merge(glmm_tests, all_deps, by.x="dep_id", by.y="dp_ID", all=TRUE)
 
+###
+
+##Tests for relaton between time of day of sampling and metabolites
+par(mfrow = c(2, 2))
+
+glmm_tests <- glmm_tests %>% 
+  dplyr::filter(!grepl('RLCO', dep_id) )%>% 
+  mutate(
+    timeDAY = lubridate::hour(timeR) + (lubridate::minute(timeR) + lubridate::second(timeR)/60)/60,
+    hour = lubridate::hour(timeR)
+  )
+
+#glu
+
+glmm_testsglu <- glmm_tests %>%
+  filter(!is.na(glu)) %>% 
+  filter(!(Year == 2018))
+  
+par(mfrow = c(2, 2))
+
+summary(lm(log(glmm_testsglu$glu)~ log(glmm_testsglu$timeDAY)))
+datesglutrans <- lm(log(glmm_testsglu$glu)~ log(glmm_testsglu$timeDAY))
+plot(datesglutrans)
+par(mfrow = c(1, 1))
+plot(log(glmm_testsglu$glu)~ log(glmm_testsglu$timeDAY))
+abline(lm(log(glmm_testsglu$glu)~ log(glmm_testsglu$timeDAY)))
+sqrt(summary(datesglutrans)$r.squared)
+sqrt(summary(datesglutrans)$r.squared)
+
+par(mfrow = c(2, 2))
+datesglu<-lm((glmm_testsglu$glu)~ (glmm_testsglu$timeDAY))
+summary(lm((glmm_testsglu$glu)~ (glmm_testsglu$timeDAY)))
+plot(datesglu)
+par(mfrow = c(1, 1))
+
+plot((glmm_testsglu$glu)~ (glmm_testsglu$timeDAY))
+abline(lm((glmm_testsglu$glu)~ (glmm_testsglu$timeDAY)))
+
+
+sqrt(summary(datesglu)$r.squared)
+sqrt(summary(datesglu)$r.squared)
+
+#CHOL
+glmm_testschol <- glmm_tests %>%
+  filter(!is.na(chol)) %>% 
+  filter(!(Year == 2018))
+
+par(mfrow = c(2, 2))
+
+summary(lm(log(glmm_testschol$chol)~ log(glmm_testschol$timeDAY)))
+datescholtrans <- lm(log(glmm_testschol$chol)~ log(glmm_testschol$timeDAY))
+plot(datescholtrans)
+par(mfrow = c(1, 1))
+plot(log(glmm_testschol$chol)~ log(glmm_testschol$timeDAY))
+abline(lm(log(glmm_testschol$chol)~ log(glmm_testschol$timeDAY)))
+sqrt(summary(datescholtrans)$r.squared)
+sqrt(summary(datescholtrans)$r.squared)
+
+par(mfrow = c(2, 2))
+dateschol<-lm((glmm_testschol$chol)~ (glmm_testschol$timeDAY))
+summary(lm((glmm_testschol$chol)~ (glmm_testschol$timeDAY)))
+plot(dateschol)
+par(mfrow = c(1, 1))
+
+plot((glmm_testschol$chol)~ (glmm_testschol$timeDAY))
+abline(lm((glmm_testschol$chol)~ (glmm_testschol$timeDAY)))
+
+sqrt(summary(dateschol)$r.squared)
+sqrt(summary(dateschol)$r.squared)
+
+#tri
+
+glmm_teststri <- glmm_tests %>%
+  filter(!is.na(tri)) %>% 
+  filter(!(Year == 2018))
+
+par(mfrow = c(2, 2))
+
+summary(lm(log(glmm_tests$tri)~ log(glmm_tests$timeDAY)))
+datestritrans <- lm(log(glmm_tests$tri)~ log(glmm_tests$timeDAY))
+plot(datestritrans)
+par(mfrow = c(1, 1))
+plot(log(glmm_tests$tri)~ log(glmm_tests$timeDAY))
+abline(lm(log(glmm_tests$tri)~ log(glmm_tests$timeDAY)))
+sqrt(summary(datestritrans)$r.squared)
+sqrt(summary(datestritrans)$r.squared)
+
+par(mfrow = c(2, 2))
+datestri<-lm((glmm_tests$tri)~ (glmm_tests$timeDAY))
+summary(lm((glmm_tests$tri)~ (glmm_tests$timeDAY)))
+plot(datestri)
+par(mfrow = c(1, 1))
+
+plot((glmm_tests$tri)~ (glmm_tests$timeDAY))
+abline(lm((glmm_tests$tri)~ (glmm_tests$timeDAY)))
+
+sqrt(summary(datestri)$r.squared)
+sqrt(summary(datestri)$r.squared)
+
+#ket
+
+
+glmm_testsket <- glmm_tests %>%
+  filter(!is.na(ket))%>% 
+  filter(!(Year == 2018))
+par(mfrow = c(2, 2))
+summary(lm(log(glmm_testsket$ket)~ log(glmm_testsket$timeDAY)))
+dateskettrans <- lm(log(glmm_testsket$ket)~ log(glmm_testsket$timeDAY))
+plot(dateskettrans)
+par(mfrow = c(1, 1))
+plot(log(glmm_testsket$ket)~ log(glmm_testsket$timeDAY))
+abline(lm(log(glmm_testsket$ket)~ log(glmm_testsket$timeDAY)))
+sqrt(summary(dateskettrans)$r.squared)
+sqrt(summary(dateskettrans)$r.squared)
+
+
+par(mfrow = c(2, 2))
+datesket<-lm((glmm_testsket$ket)~ (glmm_testsket$timeDAY))
+summary(lm((glmm_testsket$ket)~ (glmm_testsket$timeDAY)))
+plot(datesket)
+par(mfrow = c(1, 1))
+
+plot((glmm_testsket$ket)~ (glmm_testsket$timeDAY))
+abline(lm((glmm_testsket$ket)~ (glmm_testsket$timeDAY)))
+
+sqrt(summary(datesket)$r.squared)
+sqrt(summary(datesket)$r.squared)
+
+
+#
+
+###
 glmm_tests <- glmm_tests %>% 
   filter(!is.na(Year)) %>% 
   mutate(
@@ -58,7 +190,7 @@ glmm_tests <- glmm_tests %>%
 
 #saveRDS(glmm_tests, "C:/Users/francis van oordt/OneDrive - McGill University/Documents/McGill/00Res Prop v2/Chap 2 - Tracks and overlap/glmm_testsMods.RDS")
 
-glmm_tests<-readRDS("C:/Users/francis van Oordt/OneDrive - McGill University/Documents/McGill/00Res Prop v2/Chap 2 - Tracks and overlap/glmm_tests.RDS")
+#glmm_tests<-readRDS("C:/Users/francis van Oordt/OneDrive - McGill University/Documents/McGill/00Res Prop v2/Chap 2 - Tracks and overlap/glmm_tests.RDS")
 
 
 #ggpairs(glmm_tests[,c("TimeTrip", "maxdist", "totdist","sinuos", "SP")], aes(colour = SP), progress = FALSE) +
@@ -144,7 +276,7 @@ A2<-ggplot(data= glmm_tests, aes(x=Year, y=log(TimeTrip), color = Year))+ #, col
   geom_point(position = position_jitter(height = 0, width = 0.1),
              alpha = 0.3)+
   scale_color_manual(values= c("magenta4", "darkgreen"))+
-  geom_pointrange(data=ggemmeans(model = glmm_TripDurB, 
+  geom_pointrange(data=ggeffects::ggemmeans(model = glmm_TripDurB, 
                                  terms = c('Year'),
                                  ci.lvl = 0.95,
                                  type = "fe",
@@ -169,7 +301,7 @@ glmm_TripPath <- lmer( log(totdist) ~ #log_TotDist totdist
                       data = glmm_tests)
 
 options(na.action = "na.fail")
-aic_TripPath<-dredge(glmm_TripPath)
+aic_TripPath<-MuMIn::dredge(glmm_TripPath)
 aic_TripPath
 
 plot(glmm_TripPath)
@@ -507,11 +639,15 @@ glmm_tests$PC2 <- res.ind$coord[,2]
 #saveRDS(glmm_tests, "C:/Users/franc/OneDrive - McGill University/Documents/McGill/00Res Prop v2/Chap 2 - Tracks and overlap/glmm_testsPCA.RDS")
 
 
-
+backup<-glmm_tests
 #summary ALL TRIPS with PC1 and sinuosity 
 # PCA!!!!!!!!!!!!! (different file)
-glmm_tests<-readRDS("C:/Users/franc/OneDrive - McGill University/Documents/McGill/00Res Prop v2/Chap 2 - Tracks and overlap/glmm_testsPCA.RDS")
+glmm_testsPCA$Year <- as.factor(glmm_testsPCA$Year)
 
+glmm_testsPCA<-readRDS("C:/Users/francis van oordt/OneDrive - McGill University/Documents/McGill/00Res Prop v2/Chap 2 - Tracks and overlap/glmm_testsPCA.RDS")
+#saveRDS(glmm_testsPCA, "C:/Users/francis van oordt/OneDrive - McGill University/Documents/McGill/00Res Prop v2/Chap 2 - Tracks and overlap/glmm_testsPCA.RDS")
+
+glmm_tests<-glmm_testsPCA
 #PCA models
 options(na.action = "na.omit")
 glmm_PCAeffort <- lmer(PC1 ~
@@ -590,9 +726,11 @@ ggplot()+
   )+
   xlab("Sinuosity (log)")+
   ylab("Foraging effort (PC1)")+
+  facet_wrap("facet")+
   #labs(title = "Foraging Effort in Guano Seabirds")+
   theme_bw()
 
+#make a save
 
 meanModPCAsinu<-ggpredict(
   glmm_PCAeffortB,
@@ -603,14 +741,14 @@ meanModPCAsinu<-ggpredict(
   )
 
 
-###############################################################################################################
+###NOT NEEDED############################################################################################################
 
 ggpredict(glmm_PCAeffortB, terms = c("Year","Spec"), type = "re")
 
-ggpredict(xxx, terms = c("Year","Spec"), type = "re")
+#ggpredict(xxx, terms = c("Year","Spec"), type = "re")
 
 
-ggplot(data= glmm_tests[order(glmm_tests$Spec),], aes(x=log(sinuos), y=PC1, color = Spec, linetype = Year))+
+ggplot(data= glmm_tests[order(glmm_tests$Spec),], aes(x=sinuos, y=PC1, color = Spec, linetype = Year))+
   geom_point(alpha = 0.3)+
   geom_smooth(data=ggpredict(
     glmm_PCAeffortB,
@@ -625,6 +763,7 @@ ggplot(data= glmm_tests[order(glmm_tests$Spec),], aes(x=log(sinuos), y=PC1, colo
   xlab("Sinuosity (log)")+
   ylab("Foraging effort (PC1)")+
   #labs(title = "Foraging Effort in Guano Seabirds")+
+  facet_wrap("Spec")+
   theme_bw()
 
 plot(ggpredict(glmm_PCAeffortB, terms = c("Year","Spec"), type = "re",
