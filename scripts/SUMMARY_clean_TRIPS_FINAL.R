@@ -1,28 +1,28 @@
 #for chapter 2: foraging and metabolites
 #load packages
-library(tidyverse)
+library(dplyr)
 library(seabiRds)
 library(GGally)
 
 #############
 #get the data RAW, without significant cleaning
-#gps.data<-readRDS(file="C:/Users/franc/OneDrive - McGill University/Documents/McGill/Field data/gps_data_seabiRds.RDS")
-
-#get data Fixed: no Chuita, no null deployment COR09, 2 points added for 2 last 1-trips
-#ALSO BELOW, SO SKIP all the following code to produce unique_trip_ids
-gps.data<-readRDS("data/gps_data_seabiRdsFIXED.RDS")
-
-#seabirds deployment file
-dep_dataPeru<-readRDS("data/dep_dataPeru_seabiRds.RDS")
-
+#gps.data<-readRDS(file="C:/Users/francis van oordt/OneDrive - McGill University/Documents/McGill/Field data/gps_data_seabiRds.RDS")
+#118156 rows
 
 # TO SKIP if loading fixed data
 #clean some birds out 
-gps.data<-gps.data %>% 
-  filter(dep_id != "C02PEBO_20191112_A150_S2") %>% #sat on a rock for cam dep
-  filter(dep_id != "G19RLCO_03 20180623-155726") %>% #Chuita
-  filter(dep_id != "G12GUCO_COR09_2019") #non functional deployed Ecotone COR09
+#gps.data<-gps.data %>% 
+ # filter(dep_id != "C02PEBO_20191112_A150_S2") %>% #sat on a rock for cam dep
+  #filter(dep_id != "G19RLCO_03 20180623-155726") %>% #Chuita
+  #filter(dep_id != "G12GUCO_COR09_2019") #non functional deployed Ecotone COR09
+#115980 rows
 
+#get data Fixed: no Chuita, no null deployment COR09, 2 points added for 2 last 1-trips
+#ALSO BELOW, SO SKIP all the following code to produce unique_trip_ids
+gps.data<-readRDS("tracks_and_phys/tracks_and_phys/data/gps_data_seabiRdsFIXED.RDS")
+
+#seabirds deployment file
+dep_dataPeru<-readRDS("tracks_and_phys/tracks_and_phys/data/dep_dataPeru_seabiRds.RDS")
 
 #gps.data<-gps.data[which(gps.data$dep_id=="A21PEBO_19112019_A104"),] # select a  bird to check stuff
 #gps.data<-gps.data[which(gps.data$time>"2019-11-18 16:57:06"),] # select a  bird to check stuff
@@ -31,7 +31,6 @@ gps.data<-gps.data %>%
 #filter out very short bursts of GPS fixes for both species
 gps.data <- gps.data %>% 
   filter(!(dt <= (1/120)))
-
 
 #clean data again with speeds less than 80km/h (with seabiRds)
 gps.data <- cleanGPSData(data = as.data.frame(gps.data),
@@ -47,7 +46,7 @@ gps.data <- gps.data %>%
     species = substring(dep_id, 4, 7),
     time = lubridate::with_tz(time,tz = "America/Lima"), #### ACTIVATE FOR FINAL SUMMAGPS
     year = lubridate::year(time),
-    day = lubridate::day(time))# %>%  
+    day = lubridate::day(time)) %>%  
     filter(!(dt <= (1/360) & species == "GUCO"))#filter out very short bursts of GPS fixes for GUCOs (leaving the ones for PEBOs as are insignificant)
 
 

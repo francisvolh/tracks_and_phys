@@ -28,7 +28,7 @@ depth_gps_data %>%
 
 #need to add the base map! or a terrain basemap
 
-world <- sf::st_read("data/gadm36_PER_shp/gadm36_PER_0.shp")
+world <- sf::st_read("tracks_and_phys/tracks_and_phys/data/gadm36_PER_shp/gadm36_PER_0.shp")
 
 depth_gps_data %>% 
   filter(in_dive == 1) %>%

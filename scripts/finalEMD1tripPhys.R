@@ -28,7 +28,7 @@ system.time({
   emdDists <- emd(rasterStack / cellStats(rasterStack, sum))
   })
 
-saveRDS(emdDists, "emdDistsBCKPALL.RDS")
+saveRDS(emdDists, "emdDistsBCKP.RDS")
 
 emdDists<-readRDS(file.choose())
 
@@ -43,7 +43,7 @@ p<-plot(
   # tip.color = c("red","blue")[grepl('day',tree$tip.label) + 1],
   label.offset = 0.01)
 
-saveRDS(p, "plotemdALL.RDS")
+#saveRDS(p, "plotemdALL.RDS")
 
 groups <- cutree(oneclust, h = 50000)
 
@@ -61,6 +61,8 @@ groups$year <- ifelse(grepl("2018", groups$Trip_ID),
 
 table(groups$group, groups$species)
 table(groups$year, groups$species)
+table(groups$year, groups$group)
+
 
 groups[which(groups$group == 4),]
 
@@ -99,8 +101,9 @@ p <-  ggplot() +
   ylab("Latitude")+
   geom_sf(data = world, aes()) + #+ #add basemap
   coord_sf(crs = 4326, xlim = range(emd.gps$lon), ylim = range(emd.gps$lat)
-           )
-  
+           )+
+  theme_bw()
+  p
   #+
   #scale_shape_manual(values=c(0, 1, 5, 6))#+xlim = range(toplot$lon), ylim = range(toplot$lat)
 
@@ -117,8 +120,6 @@ p +  guides(color=guide_legend(title="EMD Cluster"))+
 
 unique(emd.gps$unique_trip)
 
-#merge emd groups with phys data
-emd.phys <- merge(glmm_Test_2spPOST1, groups, by.x="unique_trip", by.y="Trip_ID2", all=TRUE)
 
 
 #attempting a regression with 
@@ -139,9 +140,13 @@ reg_emd <- reg_emd %>%
 reg_emd <- reg_emd %>%
   pivot_longer(1:ncol(reg_emd), names_to = "unique_trip", values_to = "emd_dist")
 
+#clean the 2018 out of the average!!! 
+clean_idx <- grepl("2018", reg_emd$unique_trip)
+
+reg_emd <- reg_emd[-clean_idx,]
 
 mean_emds <- reg_emd %>%
-  select(unique_trip, emd_dist) %>% 
+  dplyr::select(unique_trip, emd_dist) %>% 
   mutate(
     emd_dist = as.numeric(emd_dist)
   ) %>% 
@@ -159,8 +164,11 @@ head(mean_emds)
 View(mean_emds)
 
 #physiology and mean trip values
+
+#merge emd groups with phys data
 glmm_Test_2spPOST1<-readRDS("C:/Users/francis van Oordt/OneDrive - McGill University/Documents/McGill/00Res Prop v2/Chap 2 - Tracks and overlap/glmm_post1PEBO.RDS")
 
+emd.phys <- merge(glmm_Test_2spPOST1, groups, by.x="unique_trip", by.y="Trip_ID2", all=TRUE)
 
 emd.means_phys <- merge(glmm_Test_2spPOST1, mean_emds, by.x="unique_trip", by.y="unique_trip", all=TRUE)
 
@@ -170,7 +178,9 @@ head(emd.means_phys)
 phystestsGLU <- emd.means_phys %>% 
   dplyr::select(glu ,tri , chol,  ket, PC1, sinuos, Spec, Year, latency, dep_id, meanEMD) %>% 
   filter(!is.na(glu)) %>% 
-  filter(!is.na(meanEMD))
+  filter(!is.na(meanEMD)) %>% 
+  filter(Year == 2019) %>% 
+  filter(Spec == "PEBO")
 
 options(na.action = "na.omit")
 reg0 <- lm(log(glu) ~ 1, data = phystestsGLU)
@@ -183,13 +193,15 @@ A<-ggplot(phystestsGLU)+
   geom_point(aes(x=log(meanEMD), y = log(glu)))+
   geom_smooth(method="lm", aes(x=log(meanEMD), y = log(glu) ))
 
-
+A
 
 #chol reg
 phystestsCHOL <- emd.means_phys %>% 
   dplyr::select(glu ,tri , chol,  ket, PC1, sinuos, Spec, Year, latency, dep_id, meanEMD) %>% 
   filter(!is.na(chol)) %>% 
-  filter(!is.na(meanEMD))
+  filter(!is.na(meanEMD))%>% 
+  filter(Year == 2019) %>% 
+  filter(Spec == "PEBO")
 
 options(na.action = "na.omit")
 reg0 <- lm(log(chol) ~ 1, data = phystestsCHOL)
@@ -201,12 +213,14 @@ aic_lmChol
 B<-ggplot(phystestsCHOL)+
   geom_point(aes(x=log(meanEMD), y = log(chol)))+
   geom_smooth(method="lm", aes(x=log(meanEMD), y = log(chol) ))
-
+B
 #tri reg
 phystestsTRI <- emd.means_phys %>% 
   dplyr::select(glu ,tri , chol,  ket, PC1, sinuos, Spec, Year, latency, dep_id, meanEMD) %>% 
   filter(!is.na(tri)) %>% 
-  filter(!is.na(meanEMD))
+  filter(!is.na(meanEMD))%>% 
+  filter(Year == 2019) %>% 
+  filter(Spec == "PEBO")
 
 options(na.action = "na.omit")
 reg0 <- lm(log(tri) ~ 1, data = phystestsTRI)
@@ -218,7 +232,7 @@ aic_lmTri
 C<-ggplot(phystestsTRI)+
   geom_point(aes(x=log(meanEMD), y = log(tri)))+
   geom_smooth(method="lm", aes(x=log(meanEMD), y = log(tri) ))
-
+C
 
 
 
@@ -226,7 +240,9 @@ C<-ggplot(phystestsTRI)+
 phystestsKET <- emd.means_phys %>% 
   dplyr::select(glu ,tri , chol,  ket, PC1, sinuos, Spec, Year, latency, dep_id, meanEMD) %>% 
   filter(!is.na(ket)) %>% 
-  filter(!is.na(meanEMD))
+  filter(!is.na(meanEMD))%>% 
+  filter(Year == 2019) %>% 
+  filter(Spec == "PEBO")
 
 options(na.action = "na.omit")
 reg0 <- lm(log(ket) ~ 1, data = phystestsKET)
@@ -238,6 +254,7 @@ aic_lmKet
 D<-ggplot(phystestsKET)+
   geom_point(aes(x=log(meanEMD), y = log(ket)))+
   geom_smooth(method="lm", aes(x=log(meanEMD), y = log(ket) ))
+D
 
 metabsRegres<-cowplot::plot_grid(A, B, C, D, labels = c('A', 'B', 'C', 'D'), ncol = 2)
 
@@ -249,7 +266,9 @@ phystestsGLUP1 <- emd.phys %>%
   dplyr::select(glu ,tri , chol,  ket, PC1, sinuos, Spec, Year, latency, dep_id, groups) %>% 
   filter(!is.na(glu)) %>% 
   filter(!is.na(groups)) %>% 
-  filter(Spec == "PEBO")
+  filter(Spec == "PEBO")%>% 
+  filter(Year == 2019) %>% 
+  filter(groups !=4)
 
 options(na.action = "na.omit")
 reg0 <- lm(log(glu) ~ 1, data = phystestsGLUP1)
@@ -265,13 +284,15 @@ A <- ggplot(phystestsGLUP1)+
   geom_boxplot(aes(x=as.factor(groups), y = log(glu), col = as.factor(groups)))+
   theme(legend.position = "none")+
   xlab(NULL)
-
+A
 #chol
 phystestsCHOL1 <- emd.phys %>% 
   dplyr::select(glu ,tri , chol,  ket, PC1, sinuos, Spec, Year, latency, dep_id, groups) %>% 
   filter(!is.na(chol)) %>% 
   filter(!is.na(groups)) %>% 
-  filter(Spec == "PEBO")
+  filter(Spec == "PEBO")%>% 
+  filter(Year == 2019)%>% 
+  filter(groups !=4)
 
 options(na.action = "na.omit")
 reg0 <- lm(log(chol) ~ 1, data = phystestsCHOL1)
@@ -287,13 +308,14 @@ B <- ggplot(phystestsCHOL1)+
   geom_boxplot(aes(x=as.factor(groups), y = log(chol), col = as.factor(groups)))+
   theme(legend.position = "none")+
   xlab(NULL)
-
+B
 #tri
 phystestsTRI1 <- emd.phys %>% 
   dplyr::select(glu ,tri , chol,  ket, PC1, sinuos, Spec, Year, latency, dep_id, groups) %>% 
   filter(!is.na(tri)) %>% 
   filter(!is.na(groups)) %>% 
-  filter(Spec == "PEBO")
+  filter(Spec == "PEBO")%>% 
+  filter(groups !=4)
 
 options(na.action = "na.omit")
 reg0 <- lm(log(tri) ~ 1, data = phystestsTRI1)
@@ -309,7 +331,7 @@ C <- ggplot(phystestsTRI1)+
   geom_boxplot(aes(x=as.factor(groups), y = log(tri), col = as.factor(groups)))+
   theme(legend.position = "none")+
   xlab("EMD Cluster")
-
+C
 
 #tri
 phystestsKET1 <- emd.phys %>% 
@@ -317,6 +339,7 @@ phystestsKET1 <- emd.phys %>%
   filter(!is.na(ket)) %>% 
   filter(!is.na(groups)) %>% 
   filter(Spec == "PEBO") %>% 
+  filter(groups !=4)#%>% 
   mutate(
     groups = as.factor(groups),
     ket = log(ket)
@@ -341,7 +364,7 @@ D <- ggplot(phystestsKET1)+
   geom_boxplot(aes(x=as.factor(groups), y = log(ket), col = as.factor(groups)))+
   theme(legend.position = "none")+
   xlab("EMD Cluster")
-
+D
 metabsAnova <- cowplot::plot_grid(A, B, C, D, labels = c('A', 'B', 'C', 'D'), ncol = 2)
 metabsAnova
 

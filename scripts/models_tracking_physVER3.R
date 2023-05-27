@@ -3,7 +3,6 @@
 ###
 #Models for hypothesis 1: foraging effort and years, sp, and sex
 library(lme4)
-
 library(nlme)
 library(MuMIn)
 library(tidyverse)
@@ -44,134 +43,6 @@ glmm_tests<-merge(glmm_tests, all_deps, by.x="dep_id", by.y="dp_ID", all=TRUE)
 
 ###
 
-##Tests for relaton between time of day of sampling and metabolites
-par(mfrow = c(2, 2))
-
-glmm_tests <- glmm_tests %>% 
-  dplyr::filter(!grepl('RLCO', dep_id) )%>% 
-  mutate(
-    timeDAY = lubridate::hour(timeR) + (lubridate::minute(timeR) + lubridate::second(timeR)/60)/60,
-    hour = lubridate::hour(timeR)
-  )
-
-#glu
-
-glmm_testsglu <- glmm_tests %>%
-  filter(!is.na(glu)) %>% 
-  filter(!(Year == 2018))
-  
-par(mfrow = c(2, 2))
-
-summary(lm(log(glmm_testsglu$glu)~ log(glmm_testsglu$timeDAY)))
-datesglutrans <- lm(log(glmm_testsglu$glu)~ log(glmm_testsglu$timeDAY))
-plot(datesglutrans)
-par(mfrow = c(1, 1))
-plot(log(glmm_testsglu$glu)~ log(glmm_testsglu$timeDAY))
-abline(lm(log(glmm_testsglu$glu)~ log(glmm_testsglu$timeDAY)))
-sqrt(summary(datesglutrans)$r.squared)
-sqrt(summary(datesglutrans)$r.squared)
-
-par(mfrow = c(2, 2))
-datesglu<-lm((glmm_testsglu$glu)~ (glmm_testsglu$timeDAY))
-summary(lm((glmm_testsglu$glu)~ (glmm_testsglu$timeDAY)))
-plot(datesglu)
-par(mfrow = c(1, 1))
-
-plot((glmm_testsglu$glu)~ (glmm_testsglu$timeDAY))
-abline(lm((glmm_testsglu$glu)~ (glmm_testsglu$timeDAY)))
-
-
-sqrt(summary(datesglu)$r.squared)
-sqrt(summary(datesglu)$r.squared)
-
-#CHOL
-glmm_testschol <- glmm_tests %>%
-  filter(!is.na(chol)) %>% 
-  filter(!(Year == 2018))
-
-par(mfrow = c(2, 2))
-
-summary(lm(log(glmm_testschol$chol)~ log(glmm_testschol$timeDAY)))
-datescholtrans <- lm(log(glmm_testschol$chol)~ log(glmm_testschol$timeDAY))
-plot(datescholtrans)
-par(mfrow = c(1, 1))
-plot(log(glmm_testschol$chol)~ log(glmm_testschol$timeDAY))
-abline(lm(log(glmm_testschol$chol)~ log(glmm_testschol$timeDAY)))
-sqrt(summary(datescholtrans)$r.squared)
-sqrt(summary(datescholtrans)$r.squared)
-
-par(mfrow = c(2, 2))
-dateschol<-lm((glmm_testschol$chol)~ (glmm_testschol$timeDAY))
-summary(lm((glmm_testschol$chol)~ (glmm_testschol$timeDAY)))
-plot(dateschol)
-par(mfrow = c(1, 1))
-
-plot((glmm_testschol$chol)~ (glmm_testschol$timeDAY))
-abline(lm((glmm_testschol$chol)~ (glmm_testschol$timeDAY)))
-
-sqrt(summary(dateschol)$r.squared)
-sqrt(summary(dateschol)$r.squared)
-
-#tri
-
-glmm_teststri <- glmm_tests %>%
-  filter(!is.na(tri)) %>% 
-  filter(!(Year == 2018))
-
-par(mfrow = c(2, 2))
-
-summary(lm(log(glmm_tests$tri)~ log(glmm_tests$timeDAY)))
-datestritrans <- lm(log(glmm_tests$tri)~ log(glmm_tests$timeDAY))
-plot(datestritrans)
-par(mfrow = c(1, 1))
-plot(log(glmm_tests$tri)~ log(glmm_tests$timeDAY))
-abline(lm(log(glmm_tests$tri)~ log(glmm_tests$timeDAY)))
-sqrt(summary(datestritrans)$r.squared)
-sqrt(summary(datestritrans)$r.squared)
-
-par(mfrow = c(2, 2))
-datestri<-lm((glmm_tests$tri)~ (glmm_tests$timeDAY))
-summary(lm((glmm_tests$tri)~ (glmm_tests$timeDAY)))
-plot(datestri)
-par(mfrow = c(1, 1))
-
-plot((glmm_tests$tri)~ (glmm_tests$timeDAY))
-abline(lm((glmm_tests$tri)~ (glmm_tests$timeDAY)))
-
-sqrt(summary(datestri)$r.squared)
-sqrt(summary(datestri)$r.squared)
-
-#ket
-
-
-glmm_testsket <- glmm_tests %>%
-  filter(!is.na(ket))%>% 
-  filter(!(Year == 2018))
-par(mfrow = c(2, 2))
-summary(lm(log(glmm_testsket$ket)~ log(glmm_testsket$timeDAY)))
-dateskettrans <- lm(log(glmm_testsket$ket)~ log(glmm_testsket$timeDAY))
-plot(dateskettrans)
-par(mfrow = c(1, 1))
-plot(log(glmm_testsket$ket)~ log(glmm_testsket$timeDAY))
-abline(lm(log(glmm_testsket$ket)~ log(glmm_testsket$timeDAY)))
-sqrt(summary(dateskettrans)$r.squared)
-sqrt(summary(dateskettrans)$r.squared)
-
-
-par(mfrow = c(2, 2))
-datesket<-lm((glmm_testsket$ket)~ (glmm_testsket$timeDAY))
-summary(lm((glmm_testsket$ket)~ (glmm_testsket$timeDAY)))
-plot(datesket)
-par(mfrow = c(1, 1))
-
-plot((glmm_testsket$ket)~ (glmm_testsket$timeDAY))
-abline(lm((glmm_testsket$ket)~ (glmm_testsket$timeDAY)))
-
-sqrt(summary(datesket)$r.squared)
-sqrt(summary(datesket)$r.squared)
-
-
-#
 
 ###
 glmm_tests <- glmm_tests %>% 
@@ -381,7 +252,60 @@ B2<-ggplot(data= glmm_tests, aes(x=Spec, y=log(totdist), color = Spec ))+
   guides(color = "none")+
   theme_bw()
 
+#to include Year and Species as second best model
 
+glmm_TripPathA <- lme( log(totdist) ~ #log_TotDist totdist
+                         Spec+Year, 
+                       random = ~1|dep_id, 
+                       method = "REML",
+                       weights = varIdent(form = ~ 1 | Spec),
+                       data = glmm_tests[order(glmm_tests$Spec),])
+
+summary(glmm_TripPathA)
+car::leveneTest(residuals(glmm_TripPathA, type = "pearson")~interaction(glmm_tests$Spec))
+plot(glmm_TripPathB)
+
+plot(residuals(glmm_TripPathA),log(glmm_tests$totdist))
+
+boxplot(residuals(glmm_TripPathA, type = "pearson")~ interaction(glmm_tests$Year,glmm_tests$Spec))
+
+qqnorm(glmm_TripPathA, ~ residuals(., type = "p"), abline = c(0, 1))
+
+
+TripPathAmeans<-ggeffects::ggemmeans(model = glmm_TripPathA, 
+                                     terms = c('Year','Spec'),
+                                     ci.lvl = 0.95,
+                                     type = "fe",
+                                     typical = "mean",
+                                     condition = NULL,
+                                     back.transform = FALSE,
+                                     interval = "confidence")
+
+
+
+
+B2A<-ggplot(data= glmm_tests, aes(x=Year, y=log(totdist), color = Spec ))+ 
+  geom_point(position = position_jitterdodge(dodge.width = 0.3, jitter.height = 0, jitter.width = 0.1),
+             alpha = 0.3)+
+  geom_pointrange(data=ggemmeans(model = glmm_TripPathA, 
+                                 terms = c('Year', 'Spec'),
+                                 ci.lvl = 0.95,
+                                 type = "fe",
+                                 typical = "mean",
+                                 condition = NULL,
+                                 back.transform = FALSE,
+                                 interval = "confidence"),
+                  aes(x = x, y = predicted, 
+                      ymin = predicted-std.error, 
+                      ymax = predicted+std.error, 
+                      color = group),
+                  position = position_jitterdodge(dodge.width = 0.3, jitter.height = 0, jitter.width = 0.1) )+#,, linetype = facet
+  #method = "lm"
+  xlab("Species")+
+  ylab("Total trip path (log)")+
+  guides(color = "none")+
+  theme_bw()
+B2A
 
 
 #MAX DISTANCE
@@ -422,19 +346,19 @@ options(na.action = "na.fail")
 aic_MaxDist<-dredge(glmm_MaxDist)
 aic_MaxDist
 
+#best parsim model for max dist
 glmm_MaxDistB <- lme( log(maxdist) ~ #log_TotDist totdist
                          Spec, 
                        random = ~1|dep_id, 
                        method = "REML",
-                       weights = varIdent(form = ~ 1 | Year*Spec),
+                       weights = varIdent(form = ~ 1 | Spec),
                        data = glmm_tests[order(glmm_tests$Spec),])
 
-car::leveneTest(residuals(glmm_MaxDistB, type = "pearson"), interaction(glmm_tests$Year, glmm_tests$Spec))
+car::leveneTest(residuals(glmm_MaxDistB, type = "pearson"), interaction(glmm_tests$Spec))
 plot(glmm_MaxDistB)
 plot(resid(glmm_MaxDistB),log(glmm_tests$maxdist))
 
-boxplot(residuals(glmm_MaxDistB, type= "pearson")~ interaction(glmm_tests$Year, glmm_tests$Spec))
-
+boxplot(residuals(glmm_MaxDistB, type= "pearson")~ interaction( glmm_tests$Spec))
 
 MaxDistB<-ggeffects::ggemmeans(model = glmm_MaxDistB, 
                      terms = c('Spec'),
@@ -444,9 +368,6 @@ MaxDistB<-ggeffects::ggemmeans(model = glmm_MaxDistB,
                      condition = NULL,
                      back.transform = FALSE,
                      interval = "confidence")
-
-
-
 
 C2<-ggplot(data= glmm_tests, aes(x=Spec, y=log(maxdist), color = Spec ))+ 
   geom_point(position = position_jitter(height = 0, width = 0.1),
@@ -465,10 +386,55 @@ C2<-ggplot(data= glmm_tests, aes(x=Spec, y=log(maxdist), color = Spec ))+
   guides(color = "none")+
   theme_bw()
 
+C2
 
 
+#to plot model with year and spec for max dist
 
+glmm_MaxDistA <- lme( log(maxdist) ~ #log_TotDist totdist
+                        Spec + Year, 
+                      random = ~1|dep_id, 
+                      method = "REML",
+                      weights = varIdent(form = ~ 1 | Year*Spec),
+                      data = glmm_tests[order(glmm_tests$Spec),])
 
+car::leveneTest(residuals(glmm_MaxDistB, type = "pearson"), interaction(glmm_tests$Year, glmm_tests$Spec))
+plot(glmm_MaxDistB)
+plot(resid(glmm_MaxDistB),log(glmm_tests$maxdist))
+
+boxplot(residuals(glmm_MaxDistB, type= "pearson")~ interaction( glmm_tests$Spec, glmm_tests$Year))
+
+MaxDistA<-ggeffects::ggemmeans(model = glmm_MaxDistA, 
+                               terms = c('Spec', 'Year'),
+                               ci.lvl = 0.95,
+                               type = "fe",
+                               typical = "mean",
+                               condition = NULL,
+                               back.transform = FALSE,
+                               interval = "confidence")
+
+C2A<-ggplot(data= glmm_tests, aes(x=Year, y=log(maxdist), color = Spec ))+ 
+  geom_point(position = position_jitterdodge(dodge.width = 0.3, jitter.height = 0, jitter.width = 0.1),
+             alpha = 0.3)+
+  geom_pointrange(data=ggemmeans(model = glmm_MaxDistA, 
+                                 terms = c('Year', 'Spec'),
+                                 ci.lvl = 0.95,
+                                 type = "fe",
+                                 typical = "mean",
+                                 condition = NULL,
+                                 back.transform = FALSE,
+                                 interval = "confidence") ,
+                  aes(x = x, y = predicted, 
+                      ymin = predicted-std.error, ymax = predicted+std.error, 
+                      color = group), 
+                  position = position_jitterdodge(dodge.width = 0.3, jitter.height = 0, jitter.width = 0.1) )+#,, linetype = facet
+  #method = "lm")+
+  xlab("Year")+
+  ylab("Max. distance from the colony (log)")+
+  guides(color = "none")+
+  theme_bw()
+
+C2A
 
 
 #SINUOSITY
@@ -493,27 +459,26 @@ boxplot(resid(glmm_sin)~ interaction(glmm_tests$Year, glmm_tests$Spec))
 car::leveneTest(resid(glmm_sin), interaction(glmm_tests$Year, glmm_tests$Spec))
 
 
-glmm_sin <- lme( log(sinuos) ~ #log_TotDist totdist
-                     Spec*Year, 
-                     random = ~1|dep_id, 
-                     method = "ML",
-                     weights = varIdent(form = ~ 1 | Spec*Year),
-                     data = glmm_tests)
+#glmm_sin <- lme( log(sinuos) ~ #log_TotDist totdist
+ #                    Spec*Year, 
+  #                  random = ~1|dep_id, 
+   #                  method = "ML",
+    #                 weights = varIdent(form = ~ 1 | Spec*Year),
+     #                data = glmm_tests)
 
-summary(glmm_sin)
-car::leveneTest(residuals(glmm_sin, type = "pearson"), interaction(glmm_tests$Year, glmm_tests$Spec))
-plot(glmm_sin)
+#summary(glmm_sin)
+#car::leveneTest(residuals(glmm_sin, type = "pearson"), interaction(glmm_tests$Year, glmm_tests$Spec))
+#plot(glmm_sin)
 
-plot(resid(glmm_sin),log(glmm_tests$sinuos))
+#plot(resid(glmm_sin),log(glmm_tests$sinuos))
+#boxplot(residuals(glmm_sin, type= "pearson")~ interaction(glmm_tests$Year, glmm_tests$Spec))
 
-boxplot(residuals(glmm_sin, type= "pearson")~ interaction(glmm_tests$Year, glmm_tests$Spec))
+#qqnorm(glmm_sin, ~ residuals(., type = "p"), abline = c(0, 1))
 
-qqnorm(glmm_sin, ~ residuals(., type = "p"), abline = c(0, 1))
+#options(na.action = "na.fail")
 
-options(na.action = "na.fail")
-
-aic_sin<-dredge(glmm_sin)
-aic_sin
+#aic_sin<-dredge(glmm_sin)
+#aic_sin
 
 glmm_sin <- lme( log(sinuos) ~ #log_TotDist totdist
                    Spec*Year, 
@@ -552,12 +517,12 @@ D2<-ggplot(data= glmm_tests, aes(x=Year, y=log(sinuos), color = Spec))+ #, linet
              
   xlab("Year")+
   ylab("Sinuosity")+
-  #guides(color = "none")+
+  guides(color = "none")+
   #labs(title = "Foraging Effort in Guano Seabirds")+
   theme_bw()
+D2
 
-
-pcol2<-plot_grid(A2, B2, C2, D2, labels = c('A', 'B', 'C', 'D'), ncol = 2)
+pcol2<-plot_grid(A2, B2A, C2A, D2, labels = c('A', 'B', 'C', 'D'), ncol = 2)
 
 
 mod1<- as.data.frame(aic_TripDur)
@@ -595,7 +560,8 @@ write.csv(all_means, "all_means.csv")
 
 ###PCA for metrics and model with covariate
 names(glmm_tests)
-res.pca <- prcomp(glmm_tests[, c("maxdist","TimeTrip","totdist")], scale = TRUE) #, "sinuos" 
+
+res.pca <- prcomp(glmm_tests[, c("maxdist","TimeTrip","totdist")], scale = TRUE) #,  , "sinuos"
 
 fviz_pca_var(res.pca,
              col.var = "contrib", # Color by contributions to the PC
@@ -621,6 +587,9 @@ fviz_pca_ind(res.pca,
              addEllipses = TRUE # Concentration ellipses
 )
 
+eig.val <- get_eigenvalue(res.pca)
+eig.val
+
 res.var <- get_pca_var(res.pca)
 res.var$coord          # Coordinates
 res.var$contrib        # Contributions to the PCs
@@ -642,10 +611,11 @@ glmm_tests$PC2 <- res.ind$coord[,2]
 backup<-glmm_tests
 #summary ALL TRIPS with PC1 and sinuosity 
 # PCA!!!!!!!!!!!!! (different file)
-glmm_testsPCA$Year <- as.factor(glmm_testsPCA$Year)
 
 glmm_testsPCA<-readRDS("C:/Users/francis van oordt/OneDrive - McGill University/Documents/McGill/00Res Prop v2/Chap 2 - Tracks and overlap/glmm_testsPCA.RDS")
 #saveRDS(glmm_testsPCA, "C:/Users/francis van oordt/OneDrive - McGill University/Documents/McGill/00Res Prop v2/Chap 2 - Tracks and overlap/glmm_testsPCA.RDS")
+glmm_testsPCA$Year <- as.factor(glmm_testsPCA$Year)
+
 
 glmm_tests<-glmm_testsPCA
 #PCA models
@@ -689,7 +659,6 @@ aic_effortPCA
 
 options(na.action = "na.omit")
 glmm_PCAeffortB <- lme( PC1 ~ 
-                        log(sinuos)+
                         log(sinuos)*Year+
                         Spec*Year, 
                        random = ~1|dep_id, 
@@ -703,6 +672,7 @@ plot(residuals(glmm_PCAeffortB, type = "pearson"), (glmm_tests$PC1))
 qqnorm(glmm_PCAeffortB, ~ residuals(., type = "p"), abline = c(0, 1))
 boxplot(residuals(glmm_PCAeffortB, type = "pearson")~ interaction(glmm_tests$Year, glmm_tests$Spec))
 
+car::leveneTest(residuals(glmm_PCAeffortB, type = "pearson"), interaction(glmm_tests$Year, glmm_tests$Spec))
 
 
 sjPlot::plot_model(glmm_PCAeffortB, type = "pred", terms = c("sinuos [exp]","Year","Spec"),
@@ -720,13 +690,16 @@ ggplot()+
     ci.lvl = 0.95,
     type = "fe", 
     typical = "mean",
-    back.transform = FALSE),
-    aes(x = (x), y = (predicted), color = group, linetype = facet),
+    back.transform = FALSE,
+    interval = "confidence"),
+    aes(x = (x), y = (predicted), color = group),
     method = "lm"
   )+
   xlab("Sinuosity (log)")+
   ylab("Foraging effort (PC1)")+
   facet_wrap("facet")+
+  guides( linetype= 'none')+
+  labs(color='Year')+ 
   #labs(title = "Foraging Effort in Guano Seabirds")+
   theme_bw()
 
@@ -740,6 +713,12 @@ meanModPCAsinu<-ggpredict(
   ,  typical = "mean"
   )
 
+#save aic table for PC1 effort year spec and sinous
+aic_effortPCA.df <- as.data.frame(aic_effortPCA)
+
+aic_effortPCA.df$model<-"aic_effortPCA"
+
+#write.csv(aic_effortPCA.df, "aic_effortPCA.csv")
 
 ###NOT NEEDED############################################################################################################
 
@@ -748,22 +727,26 @@ ggpredict(glmm_PCAeffortB, terms = c("Year","Spec"), type = "re")
 #ggpredict(xxx, terms = c("Year","Spec"), type = "re")
 
 
-ggplot(data= glmm_tests[order(glmm_tests$Spec),], aes(x=sinuos, y=PC1, color = Spec, linetype = Year))+
-  geom_point(alpha = 0.3)+
+##wiTH Added points as Kyle suggested! 
+ggplot()+
+  geom_point(data= glmm_tests[order(glmm_tests$Spec),], aes(x=sinuos, y=PC1), alpha = 0.3)+
   geom_smooth(data=ggpredict(
     glmm_PCAeffortB,
     terms = c("sinuos","Year","Spec"),
     ci.lvl = 0.95,
     type = "fe", 
     typical = "mean",
-    back.transform = FALSE),
-              aes(x = (x), y = (predicted), color = group, linetype = facet),
+    back.transform = FALSE,
+    interval = "confidence"),
+              aes(x = (x), y = (predicted), color = group),
               method = "lm"
     )+
   xlab("Sinuosity (log)")+
   ylab("Foraging effort (PC1)")+
   #labs(title = "Foraging Effort in Guano Seabirds")+
-  facet_wrap("Spec")+
+  facet_wrap("facet")+
+  guides( linetype= 'none')+
+  labs(color='Year')+ 
   theme_bw()
 
 plot(ggpredict(glmm_PCAeffortB, terms = c("Year","Spec"), type = "re",
@@ -793,11 +776,141 @@ sjPlot::plot_model(newMod, type = "pred", terms = c("sinuos","Year","Spec"), bac
 
 ###
 ###
+
+##
+##Tests for relation between time of day of sampling and metabolites
+par(mfrow = c(2, 2))
+
+glmm_tests <- glmm_tests %>% 
+  dplyr::filter(!grepl('RLCO', dep_id) )%>% 
+  mutate(
+    timeDAY = lubridate::hour(timeR) + (lubridate::minute(timeR) + lubridate::second(timeR)/60)/60,
+    hour = lubridate::hour(timeR)
+  )
+
+#glu
+
+glmm_testsglu <- glmm_tests %>%
+  filter(!is.na(glu)) %>% 
+  filter(!(Year == 2018))
+  
+par(mfrow = c(2, 2))
+
+summary(lm(log(glmm_testsglu$glu)~ log(glmm_testsglu$timeDAY)))
+datesglutrans <- lm(log(glmm_testsglu$glu)~ log(glmm_testsglu$timeDAY))
+plot(datesglutrans)
+par(mfrow = c(1, 1))
+plot(log(glmm_testsglu$glu)~ log(glmm_testsglu$timeDAY))
+abline(lm(log(glmm_testsglu$glu)~ log(glmm_testsglu$timeDAY)))
+sqrt(summary(datesglutrans)$r.squared)
+sqrt(summary(datesglutrans)$r.squared)
+
+par(mfrow = c(2, 2))
+datesglu<-lm((glmm_testsglu$glu)~ (glmm_testsglu$timeDAY))
+summary(lm((glmm_testsglu$glu)~ (glmm_testsglu$timeDAY)))
+plot(datesglu)
+par(mfrow = c(1, 1))
+
+plot((glmm_testsglu$glu)~ (glmm_testsglu$timeDAY))
+abline(lm((glmm_testsglu$glu)~ (glmm_testsglu$timeDAY)))
+
+
+sqrt(summary(datesglu)$r.squared)
+sqrt(summary(datesglu)$r.squared)
+
+#CHOL
+glmm_testschol <- glmm_tests %>%
+  filter(!is.na(chol)) %>% 
+  filter(!(Year == 2018))
+
+par(mfrow = c(2, 2))
+
+summary(lm(log(glmm_testschol$chol)~ log(glmm_testschol$timeDAY)))
+datescholtrans <- lm(log(glmm_testschol$chol)~ log(glmm_testschol$timeDAY))
+plot(datescholtrans)
+par(mfrow = c(1, 1))
+plot(log(glmm_testschol$chol)~ log(glmm_testschol$timeDAY))
+abline(lm(log(glmm_testschol$chol)~ log(glmm_testschol$timeDAY)))
+sqrt(summary(datescholtrans)$r.squared)
+sqrt(summary(datescholtrans)$r.squared)
+
+par(mfrow = c(2, 2))
+dateschol<-lm((glmm_testschol$chol)~ (glmm_testschol$timeDAY))
+summary(lm((glmm_testschol$chol)~ (glmm_testschol$timeDAY)))
+plot(dateschol)
+par(mfrow = c(1, 1))
+
+plot((glmm_testschol$chol)~ (glmm_testschol$timeDAY))
+abline(lm((glmm_testschol$chol)~ (glmm_testschol$timeDAY)))
+
+sqrt(summary(dateschol)$r.squared)
+sqrt(summary(dateschol)$r.squared)
+
+#tri
+
+glmm_teststri <- glmm_tests %>%
+  filter(!is.na(tri)) %>% 
+  filter(!(Year == 2018))
+
+par(mfrow = c(2, 2))
+
+summary(lm(log(glmm_tests$tri)~ log(glmm_tests$timeDAY)))
+datestritrans <- lm(log(glmm_tests$tri)~ log(glmm_tests$timeDAY))
+plot(datestritrans)
+par(mfrow = c(1, 1))
+plot(log(glmm_tests$tri)~ log(glmm_tests$timeDAY))
+abline(lm(log(glmm_tests$tri)~ log(glmm_tests$timeDAY)))
+sqrt(summary(datestritrans)$r.squared)
+sqrt(summary(datestritrans)$r.squared)
+
+par(mfrow = c(2, 2))
+datestri<-lm((glmm_tests$tri)~ (glmm_tests$timeDAY))
+summary(lm((glmm_tests$tri)~ (glmm_tests$timeDAY)))
+plot(datestri)
+par(mfrow = c(1, 1))
+
+plot((glmm_tests$tri)~ (glmm_tests$timeDAY))
+abline(lm((glmm_tests$tri)~ (glmm_tests$timeDAY)))
+
+sqrt(summary(datestri)$r.squared)
+sqrt(summary(datestri)$r.squared)
+
+#ket
+
+
+glmm_testsket <- glmm_tests %>%
+  filter(!is.na(ket))%>% 
+  filter(!(Year == 2018))
+par(mfrow = c(2, 2))
+summary(lm(log(glmm_testsket$ket)~ log(glmm_testsket$timeDAY)))
+dateskettrans <- lm(log(glmm_testsket$ket)~ log(glmm_testsket$timeDAY))
+plot(dateskettrans)
+par(mfrow = c(1, 1))
+plot(log(glmm_testsket$ket)~ log(glmm_testsket$timeDAY))
+abline(lm(log(glmm_testsket$ket)~ log(glmm_testsket$timeDAY)))
+sqrt(summary(dateskettrans)$r.squared)
+sqrt(summary(dateskettrans)$r.squared)
+
+
+par(mfrow = c(2, 2))
+datesket<-lm((glmm_testsket$ket)~ (glmm_testsket$timeDAY))
+summary(lm((glmm_testsket$ket)~ (glmm_testsket$timeDAY)))
+plot(datesket)
+par(mfrow = c(1, 1))
+
+plot((glmm_testsket$ket)~ (glmm_testsket$timeDAY))
+abline(lm((glmm_testsket$ket)~ (glmm_testsket$timeDAY)))
+
+sqrt(summary(datesket)$r.squared)
+sqrt(summary(datesket)$r.squared)
+
+
+#
 ###
 ###
 ###
 
-#Test for differences between boobies and cormorants in 2019
+#Test for DIFFERENCES BETWEEN SPECIES boobies and cormorants in 2019
 
 #GLU
 phys<-all_deps %>% 
@@ -818,6 +931,13 @@ par(opar)
 car::leveneTest(resid(glumod), interaction(phys$Year, phys$SP))
 boxplot(resid(glumod) ~ interaction(phys$Year, phys$SP))
 
+glumod0 <- lm(data=phys, log(glu)~ 1)
+
+options(na.action = "na.fail")
+aic_lmGluSP<-MuMIn::model.sel(glumod0, glumod)
+
+aic_lmGluSP
+
 
 glumod2019<-ggeffects::ggemmeans(model = glumod, 
                                     terms = c('SP'),
@@ -829,7 +949,6 @@ glumod2019<-ggeffects::ggemmeans(model = glumod,
                                     interval = "confidence")
 
 #plots 
-#TIMETRIP YEAR AND SPECIES
 glu2<-ggplot(data= phys, aes(x=SP, y=log(glu), color = SP))+ #, color = Spec
   geom_point(position = position_jitter(height = 0, width = 0.1),
              alpha = 0.3)+
@@ -843,11 +962,12 @@ glu2<-ggplot(data= phys, aes(x=SP, y=log(glu), color = SP))+ #, color = Spec
                                  condition = NULL) ,
                   aes(x = x, y = predicted, 
                       ymin = predicted-std.error, ymax = predicted+std.error, color = x))+
-  xlab("Species")+
+  xlab(NULL)+
   ylab("Glucose (log)")+
   guides(color = "none")+
-  theme_bw()
-
+  theme_bw()+
+  theme(axis.text.x=element_blank())
+glu2
 
 
 #chol
@@ -870,6 +990,15 @@ par(opar)
 car::leveneTest(resid(cholmod), interaction(phys$Year, phys$SP))
 boxplot(resid(cholmod) ~ interaction(phys$Year, phys$SP))
 
+
+
+cholmod0 <- lm(data=phys, log(chol)~ 1)
+
+options(na.action = "na.fail")
+aic_lmCholSP<-MuMIn::model.sel(cholmod0, cholmod)
+
+aic_lmCholSP
+
 cholmod2019<-ggeffects::ggemmeans(model = cholmod, 
                                  terms = c('SP'),
                                  ci.lvl = 0.95,
@@ -880,7 +1009,6 @@ cholmod2019<-ggeffects::ggemmeans(model = cholmod,
                                  interval = "confidence")
 
 #plots 
-#TIMETRIP YEAR AND SPECIES
 chol2<-ggplot(data= phys, aes(x=SP, y=log(chol), color = SP))+ #, color = Spec
   geom_point(position = position_jitter(height = 0, width = 0.1),
              alpha = 0.3)+
@@ -894,12 +1022,13 @@ chol2<-ggplot(data= phys, aes(x=SP, y=log(chol), color = SP))+ #, color = Spec
                                  condition = NULL) ,
                   aes(x = x, y = predicted, 
                       ymin = predicted-std.error, ymax = predicted+std.error, color = x))+
-  xlab("Species")+
+  xlab(NULL)+
   ylab("Cholesterol (log)")+
   guides(color = "none")+
-  theme_bw()
+  theme_bw()+
+  theme(axis.text.x=element_blank())
 
-
+chol2
 
 #tri
 
@@ -910,6 +1039,7 @@ phys<-all_deps %>%
   filter(Year == 2019) %>% 
   select(SP,Year, DepID, chol, glu, ket, tri) %>% 
   filter(!is.na(tri))
+
 trimod<-lm(data=phys, log(tri)~ SP)
 
 summary(cholmod)
@@ -922,12 +1052,10 @@ car::leveneTest(resid(trimod), interaction(phys$Year, phys$SP))
 boxplot(resid(trimod) ~ interaction(phys$Year, phys$SP))
 
 
-
-
 trimod <- lme( log(tri)~ SP, 
                random = ~1|DepID, 
                method = "REML",
-               weights = varIdent(form = ~ 1 | Year*SP),
+               weights = varIdent(form = ~ 1 | SP),
                data = phys[order(phys$SP),])
 
 car::leveneTest(residuals(trimod, type = "pearson"), interaction(phys$SP))
@@ -935,7 +1063,16 @@ boxplot(residuals(trimod, type = "pearson") ~ interaction(phys$SP))
 
 summary(trimod)
 
+trimod0 <- lme( log(tri)~ 1, 
+               random = ~1|DepID, 
+               method = "REML",
+               weights = varIdent(form = ~ 1 | SP),
+               data = phys[order(phys$SP),])
 
+options(na.action = "na.fail")
+aic_lmTriSP<-MuMIn::model.sel(trimod0, trimod)
+
+aic_lmTriSP
 
 
 trimod2019<-ggeffects::ggemmeans(model = trimod, 
@@ -947,8 +1084,8 @@ trimod2019<-ggeffects::ggemmeans(model = trimod,
                                   back.transform = FALSE,
                                   interval = "confidence")
 
-#plots 
-#TIMETRIP YEAR AND SPECIES
+# 
+
 tri2<-ggplot(data= phys, aes(x=SP, y=log(tri), color = SP))+ #, color = Spec
   geom_point(position = position_jitter(height = 0, width = 0.1),
              alpha = 0.3)+
@@ -962,11 +1099,12 @@ tri2<-ggplot(data= phys, aes(x=SP, y=log(tri), color = SP))+ #, color = Spec
                                  condition = NULL) ,
                   aes(x = x, y = predicted, 
                       ymin = predicted-std.error, ymax = predicted+std.error, color = x))+
-  xlab("Species")+
+  xlab(NULL)+
   ylab("Triglycerides (log)")+
   guides(color = "none")+
   theme_bw()
 
+tri2
 
 #ket
 phys<-all_deps %>% 
@@ -987,6 +1125,13 @@ par(opar)
 car::leveneTest(resid(ketmod), interaction(phys$Year, phys$SP))
 boxplot(resid(ketmod) ~ interaction(phys$Year, phys$SP))
 
+ketmod0<-lm(data=phys, log(ket)~ 1)
+
+options(na.action = "na.fail")
+aic_lmKetSP<-MuMIn::model.sel(ketmod, ketmod0)
+
+aic_lmKetSP
+
 ketmod2019<-ggeffects::ggemmeans(model = ketmod, 
                                  terms = c('SP'),
                                  ci.lvl = 0.95,
@@ -997,7 +1142,6 @@ ketmod2019<-ggeffects::ggemmeans(model = ketmod,
                                  interval = "confidence")
 
 #plots 
-#TIMETRIP YEAR AND SPECIES
 ket2<-ggplot(data= phys, aes(x=SP, y=log(ket), color = SP))+ #, color = Spec
   geom_point(position = position_jitter(height = 0, width = 0.1),
              alpha = 0.3)+
@@ -1011,13 +1155,30 @@ ket2<-ggplot(data= phys, aes(x=SP, y=log(ket), color = SP))+ #, color = Spec
                                  condition = NULL) ,
                   aes(x = x, y = predicted, 
                       ymin = predicted-std.error, ymax = predicted+std.error, color = x))+
-  xlab("Species")+
+  xlab(NULL)+
   ylab("Ketones (log)")+
   guides(color = "none")+
   theme_bw()
-
+ket2
 
 metabs2019<-plot_grid(glu2, chol2, tri2, ket2, labels = c('A', 'B', 'C', 'D'), ncol = 2)
+metabs2019
+
+
+#models for 2 species 2019 mets AICc's
+mod1<- as.data.frame(aic_lmGluSP)
+mod2<-as.data.frame(aic_lmCholSP)
+mod3<-as.data.frame(aic_lmTriSP)
+mod4<-as.data.frame(aic_lmKetSP)
+
+mod1$model<-"aic_lmGluSP"
+mod2$model<-"aic_lmCholSP"
+mod3$model<-"aic_lmTriSP"
+mod4$model<-"aic_lmKetSP"
+
+all_mods<-rbind(mod1, mod2, mod3, mod4)
+write.csv(all_mods, "metsSpecies_modelsAIC.csv")
+
 
 metmeans1<-as.data.frame(glumod2019)
 metmeans2<-as.data.frame(cholmod2019)
@@ -1033,9 +1194,7 @@ met_all_means<-rbind(metmeans1,metmeans2,metmeans3,metmeans4)
 write.csv(met_all_means, "met_all_means.csv")
 
 
-# Test for differences in Boobies in 2019 and 2018
-
-
+# Test for DIFFERENCES IN BOOBIES in 2019 and 2018
 #GLU
 phys<-all_deps %>% 
   mutate(
@@ -1067,6 +1226,18 @@ boxplot(residuals(glumodP, type = "pearson") ~ interaction(phys$Year))
 
 summary(glumodP)
 
+glumodP0 <- lme( log(glu)~ 1, 
+                random = ~1|DepID, 
+                method = "REML",
+                weights = varIdent(form = ~ 1 | Year),
+                data = phys[order(phys$Year),])
+
+options(na.action = "na.fail")
+
+aic_lmGLUPeb<-MuMIn::model.sel(glumodP, glumodP0)
+
+aic_lmGLUPeb
+
 
 meanglumodP<-ggeffects::ggemmeans(model = glumodP, 
                                  terms = c('Year'),
@@ -1078,7 +1249,6 @@ meanglumodP<-ggeffects::ggemmeans(model = glumodP,
                                  interval = "confidence")
 
 #plots 
-#TIMETRIP YEAR AND SPECIES
 gluPEBO<-ggplot(data= phys, aes(x=Year, y=log(glu), color = Year))+ #, color = Spec
   geom_point(position = position_jitter(height = 0, width = 0.1),
              alpha = 0.3)+
@@ -1093,11 +1263,12 @@ gluPEBO<-ggplot(data= phys, aes(x=Year, y=log(glu), color = Year))+ #, color = S
                                  condition = NULL) ,
                   aes(x = x, y = predicted, 
                       ymin = predicted-std.error, ymax = predicted+std.error, color = x))+
-  xlab("Year")+
+  xlab(NULL)+
   ylab("Glucose (log)")+
   guides(color = "none")+
-  theme_bw()
-
+  theme_bw()+
+  theme(axis.text.x=element_blank())
+gluPEBO
 
 
 #chol
@@ -1122,7 +1293,7 @@ car::leveneTest(resid(cholmodP), interaction(phys$Year))
 boxplot(resid(cholmodP) ~ interaction(phys$Year))
 
 
-###WORSE WHEN ACCOUNTING FOR DIFF VARIANCES
+###ACCOUNTING FOR DIFF VARIANCES
 cholmodP <- lme( log(chol)~ Year, 
                 random = ~1|DepID, 
                 method = "ML",
@@ -1135,6 +1306,17 @@ boxplot(residuals(cholmodP, type = "pearson") ~ interaction(phys$Year))
 
 summary(cholmodP)
 
+cholmodP0 <- lme( log(chol)~ 1, 
+                 random = ~1|DepID, 
+                 method = "ML",
+                 weights = varIdent(form = ~ 1 | Year),
+                 data = phys[order(phys$Year),])
+
+options(na.action = "na.fail")
+aic_lmCHOLPe<-MuMIn::model.sel(cholmodP, cholmodP0)
+
+aic_lmCHOLPe
+
 
 meancholmodP<-ggeffects::ggemmeans(model = cholmodP, 
                                   terms = c('Year'),
@@ -1146,7 +1328,7 @@ meancholmodP<-ggeffects::ggemmeans(model = cholmodP,
                                   interval = "confidence")
 
 #plots 
-#TIMETRIP YEAR AND SPECIES
+
 cholPEBO<-ggplot(data= phys, aes(x=Year, y=log(chol), color = Year))+ #, color = Spec
   geom_point(position = position_jitter(height = 0, width = 0.1),
              alpha = 0.3)+
@@ -1161,11 +1343,13 @@ cholPEBO<-ggplot(data= phys, aes(x=Year, y=log(chol), color = Year))+ #, color =
                                  condition = NULL) ,
                   aes(x = x, y = predicted, 
                       ymin = predicted-std.error, ymax = predicted+std.error, color = x))+
-  xlab("Year")+
+  xlab(NULL)+
   ylab("Cholesterol (log)")+
   guides(color = "none")+
-  theme_bw()
+  theme_bw()+
+  theme(axis.text.x=element_blank())
 
+cholPEBO
 
 
 #tri
@@ -1188,6 +1372,14 @@ par(opar)
 
 car::leveneTest(resid(trimodP), interaction(phys$Year))
 boxplot(resid(trimodP) ~ interaction(phys$Year))
+
+trimodP0<-lm(data=phys, log(tri)~ 1)
+
+
+options(na.action = "na.fail")
+aic_lmTriPe<-MuMIn::model.sel(trimodP, trimodP0)
+
+aic_lmTriPe
 
 
 meantrimodP<-ggeffects::ggemmeans(model = trimodP, 
@@ -1215,12 +1407,12 @@ triPEBO<-ggplot(data= phys, aes(x=Year, y=log(tri), color = Year))+ #, color = S
                                  condition = NULL) ,
                   aes(x = x, y = predicted, 
                       ymin = predicted-std.error, ymax = predicted+std.error, color = x))+
-  xlab("Year")+
+  xlab(NULL)+
   ylab("Triglycerides (log)")+
   guides(color = "none")+
   theme_bw()
 
-
+triPEBO
 
 #ket
 phys<-all_deps %>% 
@@ -1244,6 +1436,7 @@ car::leveneTest(resid(ketmodP), interaction(phys$Year))
 boxplot(resid(ketmodP) ~ interaction(phys$Year))
 
 
+summary(ketmodP)
 
 ketmodP <- lme( log(ket)~ Year, 
                 random = ~1|DepID, 
@@ -1253,9 +1446,20 @@ ketmodP <- lme( log(ket)~ Year,
 car::leveneTest(residuals(ketmodP, type = "pearson"), interaction(phys$Year))
 boxplot(residuals(ketmodP, type = "pearson") ~ interaction(phys$Year))
 
-summary(ketmodP)
 
 
+
+ketmodP0 <- lme( log(ket)~ 1, 
+                random = ~1|DepID, 
+                method = "REML",
+                weights = varIdent(form = ~ 1 | Year),
+                data = phys[order(phys$Year),])
+
+
+options(na.action = "na.fail")
+aic_lmKetPe<-MuMIn::model.sel(ketmodP, ketmodP0)
+
+aic_lmKetPe
 
 meanketmodP<-ggeffects::ggemmeans(model = ketmodP, 
                                    terms = c('Year'),
@@ -1267,7 +1471,7 @@ meanketmodP<-ggeffects::ggemmeans(model = ketmodP,
                                    interval = "confidence")
 
 #plots 
-#TIMETRIP YEAR AND SPECIES
+
 ketPEBO<-ggplot(data= phys, aes(x=Year, y=log(ket), color = Year))+ #, color = Spec
   geom_point(position = position_jitter(height = 0, width = 0.1),
              alpha = 0.3)+
@@ -1282,14 +1486,32 @@ ketPEBO<-ggplot(data= phys, aes(x=Year, y=log(ket), color = Year))+ #, color = S
                                  condition = NULL) ,
                   aes(x = x, y = predicted, 
                       ymin = predicted-std.error, ymax = predicted+std.error, color = x))+
-  xlab("Year")+
+  xlab(NULL)+
   ylab("Ketones (log)")+
   guides(color = "none")+
   theme_bw()
-
+ketPEBO
 
 
 metabPEBO<-plot_grid(gluPEBO, cholPEBO, triPEBO, ketPEBO, labels = c('A', 'B', 'C', 'D'), ncol = 2)
+metabPEBO
+
+#models AICs for Boobies  2018 2019 mets 
+
+
+mod1<- as.data.frame(aic_lmGLUPeb)
+mod2<-as.data.frame(aic_lmCHOLPe)
+mod3<-as.data.frame(aic_lmTriPe)
+mod4<-as.data.frame(aic_lmKetPe)
+
+mod1$model<-"aic_lmGLUPeb"
+mod2$model<-"aic_lmCHOLPe"
+mod3$model<-"aic_lmTriPe"
+mod4$model<-"aic_lmKetPe"
+
+all_mods<-rbind(mod1, mod2, mod3, mod4)
+write.csv(all_mods, "metsPEBO2018_19_modelsAIC.csv")
+
 
 metmeans1P<-as.data.frame(meanglumodP)
 metmeans2P<-as.data.frame(meancholmodP)
@@ -1306,7 +1528,7 @@ write.csv(met_all_meansP, "met_all_meansPEBO.csv")
 
 
 #########################################################################################################################################
-#PCA of metabolites
+#PCA of metabolites: NOT USED
 complete.cases() all_deps[, c("glu","chol","tri", "ket")]
 
 all_deps1<-all_deps %>% 

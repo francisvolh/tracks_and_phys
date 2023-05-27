@@ -44,16 +44,15 @@ ggplot(phystestsGLUP1, aes(y = log(glu), x =  Year, col = Year)) + geom_violin()
 # If this is not significant, then pool years for regressions, but don't include year in the regression models
 t.test(log(phystestsGLUP1$glu) ~ phystestsGLUP1$Year)
 
-#options(na.action = "na.omit")
+options(na.action = "na.omit")
 # Without year, you don't need to worry about unequal variance
 reg0 <- lm(log(glu) ~ 1, data = phystestsGLUP1)
 reg1 <- lm(log(glu) ~ log(sinuos), data = phystestsGLUP1)
 reg2 <- lm(log(glu) ~ PC1, data = phystestsGLUP1) ###############DELETED method= 'ML' in this and all subsequent models
-reg3 <- lm(log(glu) ~ PC1 + log(sinuos) , data = phystestsGLUP1)
-reg4 <- lm(log(glu) ~ PC1 *log(sinuos),  data = phystestsGLUP1)
-reg5 <- lm(log(glu) ~ PC1 *latency,  data = phystestsGLUP1)
-reg6 <- lm(log(glu) ~ latency,  data = phystestsGLUP1)
-
+reg3 <- lm(log(glu) ~ PC1+log(sinuos) , data = phystestsGLUP1)
+reg4 <- lm(log(glu) ~ PC1*log(sinuos),  data = phystestsGLUP1)
+reg5 <- lm(log(glu) ~ PC1*log(latency),  data = phystestsGLUP1)
+reg6 <- lm(log(glu) ~ log(latency),  data = phystestsGLUP1)
 
 options(na.action = "na.fail")
 aic_lmGluP<-MuMIn::model.sel(reg0, reg1, reg2, reg3, reg4, reg5, reg6)
@@ -66,6 +65,7 @@ summary(reg0)
 
 ggplot(phystestsGLUP1, aes(y = log(glu), x =  log(sinuos))) + geom_point()
 ggplot(phystestsGLUP1, aes(y = log(glu), x =  PC1)) + geom_point()
+ggplot(phystestsGLUP1, aes(y = log(glu), x =  Year, col = Year)) + geom_violin()+ geom_point()
 
 
 #do I need to check for model fit and assumptions if the next best is the NULL with less than 2 dAIC??
@@ -94,22 +94,23 @@ t.test(log(phystestsCHOLP1$chol) ~ phystestsCHOLP1$Year)
 phystestsCHOLP1<-glmm_Test_2spPOST1 %>% 
   select(glu ,tri , chol,  ket, PC1, sinuos, Spec, Year, latency, dep_id) %>% 
   filter(!is.na(chol)) %>% 
-  filter(Spec == "PEBO") %>% 
-  filter(Year == "2019")
+  filter(Spec == "PEBO") #%>% 
+  #filter(Year == "2019")
 
 options(na.action = "na.omit")
 
 reg0 <- lm(data = phystestsCHOLP1, formula =  log(chol) ~  1)
 reg1 <- lm(data = phystestsCHOLP1, formula =  log(chol) ~ log(sinuos))
 reg2 <- lm(data = phystestsCHOLP1, formula =  log(chol) ~ PC1)
-reg3 <- lm(data = phystestsCHOLP1, formula =  log(chol) ~ log(sinuos) + PC1)
-reg4 <- lm(data = phystestsCHOLP1, formula =  log(chol) ~ log(sinuos) * PC1)
-reg5 <- lm(data = phystestsCHOLP1, log(chol) ~ PC1 *log (latency))
-reg6 <- lm(data = phystestsCHOLP1, log(chol) ~ log (latency))
+reg3 <- lm(data = phystestsCHOLP1, formula =  log(chol) ~ PC1+log(sinuos) )
+reg4 <- lm(data = phystestsCHOLP1, formula =  log(chol) ~ PC1*log(sinuos))
+reg5 <- lm(data = phystestsCHOLP1, formula = log(chol) ~ PC1*log(latency))
+reg6 <- lm(data = phystestsCHOLP1, formula = log(chol) ~ log(latency))
 
 #options(na.action = "na.fail")
 aic_lmCholP<-MuMIn::model.sel(reg0, reg1, reg2, reg3, reg4, reg5, reg6)
 aic_lmCholP
+
 #write.csv(aic_lmCholP, "AIC.mean.cholPEBO.csv")
 
 ggplot(phystestsCHOLP1, aes(y = log(chol), x =  log(sinuos))) + geom_point()
@@ -198,13 +199,23 @@ options(na.action = "na.omit")
 reg0 <- lm(data = phystestsTRIP1, formula =  log(tri) ~  1)
 reg1 <- lm(data = phystestsTRIP1, formula =  log(tri) ~ log(sinuos))
 reg2 <- lm(data = phystestsTRIP1, formula =  log(tri) ~ PC1)
-reg3 <- lm(data = phystestsTRIP1, formula =  log(tri) ~ log(sinuos) + PC1)
-reg4 <- lm(data = phystestsTRIP1, formula =  log(tri) ~ log(sinuos) * PC1)
-reg5 <- lm(data = phystestsTRIP1, log(tri) ~ PC1 * log(latency))
+reg3 <- lm(data = phystestsTRIP1, formula =  log(tri) ~ PC1+log(sinuos) )
+reg4 <- lm(data = phystestsTRIP1, formula =  log(tri) ~  PC1*log(sinuos) )
+reg5 <- lm(data = phystestsTRIP1, log(tri) ~ PC1*log(latency))
 reg6 <- lm(data = phystestsTRIP1, log(tri) ~ log(latency))
+
+options(na.action = "na.fail")
 
 aic_lmTriP1<-MuMIn::model.sel(reg0,reg1, reg2, reg3, reg4, reg5, reg6)
 aic_lmTriP1
+
+
+#save aic table for PC1 effort year spec and sinous
+aic_lmTriP1.df <- as.data.frame(aic_lmTriP1)
+
+aic_lmTriP1.df$model<-"aic_lmTriP1"
+
+#write.csv(aic_lmTriP1.df, "aic_lmTriP1.df.csv")
 
 ggplot(phystestsTRIP1, aes(y = log(tri), x = latency)) + geom_point()
 
@@ -235,6 +246,33 @@ PEBOtri1trip <- ggplot()+
   ylab("Triglycerides (log)")+
   #labs(title = "Foraging Effort in Guano Seabirds")+
   theme_bw()
+PEBOtri1trip
+
+
+PEBOtri1tripA <- ggplot()+
+  geom_point(data= phystestsTRIP1, aes(x=latency, y=log(tri)), alpha = 0.3)+
+  geom_smooth(data=ggpredict(
+    reg6,
+    terms = c("latency"),
+    ci.lvl = 0.95,
+    type = "fe",
+    back.transform= FALSE, 
+    interval = "confidence",
+    typical = "mean"
+  ),
+  aes(x = (x), y = (predicted)),
+  method = "lm"
+  )+
+  xlab("Latency (log)")+
+  ylab("Triglycerides (log)")+
+  #labs(title = "Foraging Effort in Guano Seabirds")+
+  theme_bw()
+
+
+PEBOtri1tripA
+
+
+
 
 ###KETONES
 phystestsKETP1<-glmm_Test_2spPOST1 %>% 
