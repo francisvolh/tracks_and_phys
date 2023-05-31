@@ -1,5 +1,6 @@
 #model for physiology #with Allison's input
 library(lme4)
+install.packages("MuMIn", repos="https://r-forge.r-project.org/", type = "source")
 library(MuMIn)
 library(tidyverse)
 library(ggeffects)
