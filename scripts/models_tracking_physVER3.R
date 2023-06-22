@@ -5,7 +5,8 @@
 library(lme4)
 library(nlme)
 library(MuMIn)
-library(tidyverse)
+library(ggplot2)
+library(dplyr)
 library(GGally)
 library(ggeffects)
 library(cowplot)
@@ -41,13 +42,15 @@ glmm_tests<-readRDS("C:/Users/francis van oordt/OneDrive - McGill University/Doc
 #merge trip summaries with Phys Sheet including sinuosity info a V1
 glmm_tests<-merge(glmm_tests, all_deps, by.x="dep_id", by.y="dp_ID", all=TRUE)
 
-###
-
+### get julian date
+glmm_tests$julian <- format(glmm_tests$startt, "%j") 
 
 ###
 glmm_tests <- glmm_tests %>% 
   filter(!is.na(Year)) %>% 
+  #filter(!tottime >20) %>% #excluding trip of one bird that was tracked for 9 days
   mutate(
+    julian = as.numeric(julian),
     Year=as.factor(Year),
     TimeTrip =as.numeric(TimeTrip),
     dep_id=as.factor(dep_id),
@@ -68,7 +71,17 @@ glmm_tests <- glmm_tests %>%
  # theme_bw()
 
 
-
+#check relationships of increased parameters in time pass by (days) totdist, TimeTrip, maxdist, sinous
+ggscatter(glmm_tests, y = "TimeTrip", x = "julian",
+          facet.by = "Year",
+          color = "black", shape = 21, #size = 3, # Points color, shape and size
+          add = "reg.line",  # Add regressin line
+          add.params = list(color = "blue", fill = "lightgray"), # Customize reg. line
+          conf.int = TRUE, # Add confidence interval
+          cor.coef = TRUE, # Add correlation coefficient. see ?stat_cor
+          cor.coeff.args = list(method = "pearson", #label.x = 3, 
+                                label.sep = "\n")
+)
 
 ###################################################################################
 #models with covariate and fixed effects, fixed slopes

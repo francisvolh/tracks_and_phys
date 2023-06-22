@@ -19,10 +19,10 @@ library(GGally)
 
 #get data Fixed: no Chuita, no null deployment COR09, 2 points added for 2 last 1-trips
 #ALSO BELOW, SO SKIP all the following code to produce unique_trip_ids
-gps.data<-readRDS("tracks_and_phys/tracks_and_phys/data/gps_data_seabiRdsFIXED.RDS")
+gps.data<-readRDS("data/gps_data_seabiRdsFIXED.RDS")
 
 #seabirds deployment file
-dep_dataPeru<-readRDS("tracks_and_phys/tracks_and_phys/data/dep_dataPeru_seabiRds.RDS")
+dep_dataPeru<-readRDS("data/dep_dataPeru_seabiRds.RDS")
 
 #gps.data<-gps.data[which(gps.data$dep_id=="A21PEBO_19112019_A104"),] # select a  bird to check stuff
 #gps.data<-gps.data[which(gps.data$time>"2019-11-18 16:57:06"),] # select a  bird to check stuff
