@@ -54,7 +54,7 @@ op.for.theor <- ggplot(data.mock, aes(x, y))+
 
 op.for.theor
 
-ggsave("op.for.theor.png", op.for.theor,  units = 'cm', width = 25, height = 16)  
+ggsave("plots/op.for.theor.png", op.for.theor,  units = 'cm', width = 25, height = 16)  
 
 getwd()  
   
