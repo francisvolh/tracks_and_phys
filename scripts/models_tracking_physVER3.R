@@ -12,6 +12,7 @@ library(ggeffects)
 library(cowplot)
 library(lattice)
 library(factoextra)
+library(ggpubr)
 
 setwd("C:/Users/francis van oordt/OneDrive - McGill University/Documents/McGill/00Res Prop v2/Chap 2 - Tracks and overlap/")
 
@@ -72,8 +73,7 @@ glmm_tests <- glmm_tests %>%
 
 
 #check relationships of increased parameters in time pass by (days) totdist, TimeTrip, maxdist, sinous
-ggscatter(glmm_tests, y = "TimeTrip", x = "julian",
-          facet.by = "Year",
+plot<- ggscatter(glmm_tests, y = "TimeTrip", x = "julian",
           color = "black", shape = 21, #size = 3, # Points color, shape and size
           add = "reg.line",  # Add regressin line
           add.params = list(color = "blue", fill = "lightgray"), # Customize reg. line
@@ -82,6 +82,7 @@ ggscatter(glmm_tests, y = "TimeTrip", x = "julian",
           cor.coeff.args = list(method = "pearson", #label.x = 3, 
                                 label.sep = "\n")
 )
+facet(plot, facet.by = "Year", scales = "free")
 
 ###################################################################################
 #models with covariate and fixed effects, fixed slopes
@@ -95,13 +96,15 @@ glmm_TripDur <- lmer(log(TimeTrip) ~ #TimeTrip log_Time
                    data = glmm_tests)
 
 summary(glmm_TripDur)
-plot(glmm_TripDur)
+plot(glmm_TripDur, type = c("p", "smooth"))
+plot(glmm_TripDur, sqrt(abs(resid(.))) ~ fitted(.), type =c("p", "smooth"))
+
 plot(resid(glmm_TripDur),log(glmm_tests$TimeTrip))
 qqmath(glmm_TripDur, id=0.05)
 boxplot(resid(glmm_TripDur)~ interaction(glmm_tests$Year, glmm_tests$Spec))
 
 car::leveneTest(resid(glmm_TripDur), interaction(glmm_tests$Year, glmm_tests$Spec))
-
+car::influencePlot(glmm_TripDur)
 
 
 
