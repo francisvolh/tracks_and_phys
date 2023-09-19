@@ -11,7 +11,7 @@ ecofolder<-"C:/Users/francis van oordt/OneDrive - McGill University/Documents/Mc
 
 setwd(ecofolder)
 
-raw_dep <- read.csv("C:/Users/francis van oordtis van oordt/OneDrive - McGill University/Documents/McGill/Field data/05 GN 2019 Nov/deployments2019new.csv", 
+raw_dep <- read.csv("C:/Users/francis van oordt/OneDrive - McGill University/Documents/McGill/Field data/05 GN 2019 Nov/deployments2019new.csv", 
                     stringsAsFactors = F)
 
 idx <- grep("COR", raw_dep$unit)
