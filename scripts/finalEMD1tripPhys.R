@@ -80,6 +80,7 @@ head(groups)
 
 
 library(tidyverse)
+gps.data<-readRDS(file.choose())
 emd.gps <- gps.data %>% 
   filter(unique_trip %in% unique(groups$Trip_ID2))
 
@@ -91,9 +92,14 @@ head(emd.gps)
 emd.gps <- emd.gps %>% 
   filter(!is.na(lon)) 
 
+world <- sf::st_read("data/gadm36_PER_shp/gadm36_PER_0.shp")
+
+
+#EMD Clusters map
+
 p <-  ggplot() +
   geom_path(data=emd.gps, aes(x = lon, y = lat, 
-                               linetype=as.factor(groups),
+                               linetype=as.factor(species.x),
                               color = as.factor(groups)
                                ), 
              cex= 0.5) +
@@ -102,7 +108,8 @@ p <-  ggplot() +
   geom_sf(data = world, aes()) + #+ #add basemap
   coord_sf(crs = 4326, xlim = range(emd.gps$lon), ylim = range(emd.gps$lat)
            )+
-  theme_bw()
+  theme_bw()+
+  labs(color = "EMD Cluster", linetype = "Species")
   p
   #+
   #scale_shape_manual(values=c(0, 1, 5, 6))#+xlim = range(toplot$lon), ylim = range(toplot$lat)
@@ -115,9 +122,12 @@ p <-  ggplot() +
 #legend.justification = c(1,1),
 #legend.text = element_text(size = 15)
 
-p +  guides(color=guide_legend(title="EMD Cluster"))+
-  guides(linetype="none")
-
+  #another way to change the titles
+#p +  guides(color=guide_legend(title="EMD Cluster"))+
+ # guides(linetype="none")
+ggplot2::ggsave("plots/EMDclusterTracks1.png", p, dpi = 300, bg = "white", units = 'in', width = 5, height = 7)
+  
+  
 unique(emd.gps$unique_trip)
 
 
