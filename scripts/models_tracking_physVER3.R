@@ -48,9 +48,9 @@ glmm_tests$julian <- format(glmm_tests$startt, "%j")
 
 ###
 glmm_tests <- glmm_tests |>
-  dplyr::dplyr::filter(!is.na(Year)) |>
+ dplyr::filter(!is.na(Year)) |>
   #dplyr::filter(!tottime >20)|>#excluding trip of one bird that was tracked for 9 days
-  dplyr::dplyr::mutate(
+  dplyr::mutate(
     julian = as.numeric(julian),
     Year=as.factor(Year),
     TimeTrip =as.numeric(TimeTrip),
@@ -65,12 +65,23 @@ glmm_tests <- glmm_tests |>
 
 #saveRDS(glmm_tests, "C:/Users/francis van oordt/OneDrive - McGill University/Documents/McGill/00Res Prop v2/Chap 2 - Tracks and overlap/glmm_testsMods.RDS")
 
-#glmm_tests<-readRDS("C:/Users/francis van Oordt/OneDrive - McGill University/Documents/McGill/00Res Prop v2/Chap 2 - Tracks and overlap/glmm_tests.RDS")
+#glmm_tests<-readRDS("C:/Users/francis van Oordt/Documents/McGill/00Res Prop v2/Chap 2 - Tracks and overlap/glmm_tests.RDS")
 
 
 #ggpairs(glmm_tests[,c("TimeTrip", "maxdist", "totdist","sinuos", "SP")], aes(colour = SP), progress = FALSE) +
  # theme_bw()
 
+#obtain mean duration of trip value per year (median to avoid a couple of extremes)
+glmm_tests|>
+  dplyr::group_by(dep_id, Day, Year)|>
+  dplyr::summarise(
+    total_Trip = sum(tottime)
+  )|>
+  dplyr::ungroup()|>
+  dplyr::group_by(Year)|>
+  dplyr::summarise(
+    meanAway = median(total_Trip)
+  )
 
 #check relationships of increased parameters in time pass by (days) totdist, TimeTrip, maxdist, sinous
 plot<- ggpubr::ggscatter(glmm_tests, y = "TimeTrip", x = "julian",
