@@ -1,7 +1,67 @@
 library(move)
+#Create move object, run EMD (similarity) similarity analysis, cluster similar tracks, 
+# plot and test differences
+
+#########################################
+#########################################
+### 1. Preload and prep move object (number of trips or individuals can substantially change the time of prcessing)
+###    Only have run it with 37 birds and it takes 2.5 days
+###    Run on DRA for 37 birds with pre-loaded move object
+###
+### @@@ SKIP to next step when loading already created move objects
+#########################################
+#########################################
+
+#
+#
+#get all dep_id indistinct of metabolites, just from the final summry of 
+#ONLY WITH 1 last trip (not mean trips)
+#physiology and mean trip values
+glmm_Test_2spPOST1<-readRDS("C:/Users/francis van Oordt/OneDrive - McGill University/Documents/McGill/00Res Prop v2/Chap 2 - Tracks and overlap/glmm_post1PEBO.RDS")
+
+
+
+forEMDids <- glmm_Test_2spPOST1 %>% 
+  #dplyr::select(glu ,tri , chol,  ket, PC1, sinuos, Spec, Year, latency, dep_id, unique_trip, steps) %>% 
+  #filter(!is.na(glu)) %>% 
+  filter(steps>10)
+
+#get GPS raw data fixed
+gps.data<-readRDS("C:/Users/francis van oordt/OneDrive - McGill University/Documents/McGill/Field data/gps_data_seabiRdsFIXED.RDS")
+
+emd.gps<-gps.data %>% 
+  filter(unique_trip %in% unique(forEMDids$unique_trip))
+
+emd.gps<-emd.gps[order(emd.gps$dep_id, emd.gps$time),]
+
+emd.gps <- as.data.frame(emd.gps)
+
 
 #clean run for CC with all birds, 10 steps per trips (previous run had 30 and lost 4 birds/trips)
-moveobject<-readRDS("data/moveobjectALL.RDS") # all contains 56 trips, it didnt have enough time with 15days
+#moveobject<-readRDS("data/moveobjectALL.RDS") # all contains 56 trips, it didnt have enough time with 15days
+
+
+#make move object
+moveobjectALL <- move(x = emd.gps$lon , 
+                      y = emd.gps$lat ,
+                      time = as.POSIXct(emd.gps$time, format="%Y-%m-%d %H:%M:%OS", tz="America/Lima") ,
+                      data = emd.gps,
+                      proj = CRS("+proj=longlat +ellps=WGS84 +datum=WGS84") ,
+                      animal = emd.gps$dep_id
+)
+
+
+##################################################################
+##################################################################
+######### 2. Work on moveobject (already saved)
+#########
+######### Two version of objects: 37 trips (move object 2) or 56 trips (moveobject_all) 
+###################################################################
+
+moveobject <- readRDS("data/moveobjectALL.RDS")
+
+moveobject <- readRDS("data/moveobject2.RDS")
+
 
 moveobject<-spTransform(moveobject, center=T)
 e<-extent(moveobject)+200000
@@ -26,7 +86,7 @@ sum(cellStats(rasterStack, sum))
 
 system.time({
   emdDists <- emd(rasterStack / cellStats(rasterStack, sum))
-  })
+})
 
 saveRDS(emdDists, "emdDistsBCKP.RDS")
 
@@ -55,8 +115,8 @@ groups$species <- stringr::str_sub(groups$Trip_ID, 4,7)
 
 # Extract the year if it is 2021
 groups$year <- ifelse(grepl("2018", groups$Trip_ID),
-       "2018",
-       "2019")
+                      "2018",
+                      "2019")
 
 
 table(groups$group, groups$species)
@@ -99,22 +159,22 @@ world <- sf::st_read("data/gadm36_PER_shp/gadm36_PER_0.shp")
 
 p <-  ggplot() +
   geom_path(data=emd.gps, aes(x = lon, y = lat, 
-                               linetype=as.factor(species.x),
+                              linetype=as.factor(species.x),
                               color = as.factor(groups)
-                               ), 
-             cex= 0.5) +
+  ), 
+  cex= 0.5) +
   xlab("Longitude")+
   ylab("Latitude")+
   geom_sf(data = world, aes()) + #+ #add basemap
   coord_sf(crs = 4326, xlim = range(emd.gps$lon), ylim = range(emd.gps$lat)
-           )+
+  )+
   theme_bw()+
   labs(color = "EMD Cluster", linetype = "Species")
-  p
-  #+
-  #scale_shape_manual(values=c(0, 1, 5, 6))#+xlim = range(toplot$lon), ylim = range(toplot$lat)
+p
+#+
+#scale_shape_manual(values=c(0, 1, 5, 6))#+xlim = range(toplot$lon), ylim = range(toplot$lat)
 
- #annotate(geom="text", x=-78.6, y=-8.4, label="2018", size= 13,
+#annotate(geom="text", x=-78.6, y=-8.4, label="2018", size= 13,
 #        color="black") +
 # guides(color = guide_legend(override.aes = list(size = 4)) ) +
 #theme(
@@ -122,12 +182,12 @@ p <-  ggplot() +
 #legend.justification = c(1,1),
 #legend.text = element_text(size = 15)
 
-  #another way to change the titles
+#another way to change the titles
 #p +  guides(color=guide_legend(title="EMD Cluster"))+
- # guides(linetype="none")
+# guides(linetype="none")
 ggplot2::ggsave("plots/EMDclusterTracks1.png", p, dpi = 300, bg = "white", units = 'in', width = 5, height = 7)
-  
-  
+
+
 unique(emd.gps$unique_trip)
 
 
@@ -350,10 +410,10 @@ phystestsKET1 <- emd.phys %>%
   filter(!is.na(groups)) %>% 
   filter(Spec == "PEBO") %>% 
   filter(groups !=4)#%>% 
-  mutate(
-    groups = as.factor(groups),
-    ket = log(ket)
-  )
+mutate(
+  groups = as.factor(groups),
+  ket = log(ket)
+)
 
 table(phystestsKET1$groups)
 
@@ -385,12 +445,12 @@ ggplot(data= phystestsKET1, aes(x=groups, y = log(ket), col= groups))+
   #xlab("EMD Cluster") +
   geom_signif(
     comparisons = list(c("1", "2"),
-                      c("1", "3"),
-                      c("1", "4"), 
-                      c("2", "3"),
-                      c("2", "4"),
-                      c("3", "4")
-                      ),
+                       c("1", "3"),
+                       c("1", "4"), 
+                       c("2", "3"),
+                       c("2", "4"),
+                       c("3", "4")
+    ),
     y_position = c(0.5, 0.8, 1.1, 1.4, 1.7, 2), 
     #xmin = c(0.8, 1.8), 
     #xmax = c(1.2, 2.2),
@@ -399,8 +459,8 @@ ggplot(data= phystestsKET1, aes(x=groups, y = log(ket), col= groups))+
     map_signif_level = TRUE, 
     test = "TukeyHSD"
   )#+
-    geom_signif(
-    comparisons = list(c("3", "1"))
-  )
+geom_signif(
+  comparisons = list(c("3", "1"))
+)
 
 class(phystestsKET1$groups)
