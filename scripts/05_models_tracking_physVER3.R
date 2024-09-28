@@ -586,65 +586,10 @@ all_means<-rbind(means1, means2, means3, means4)
 write.csv(all_means, "all_means.csv")
 
 
-
-
-
-
-
-###PCA for metrics and model with covariate
-names(glmm_tests)
-
-res.pca <- prcomp(glmm_tests[, c("maxdist","TimeTrip","totdist")], scale = TRUE) #,  , "sinuos"
-
-fviz_pca_var(res.pca,
-             col.var = "contrib", # Color by contributions to the PC
-             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
-             repel = TRUE     # Avoid text overlapping
-)
-
-groups <- as.factor(glmm_tests$Spec)
-fviz_pca_ind(res.pca,
-             col.ind = groups, # color by groups
-             palette = c("#00AFBB",  "#FC4E07"),
-             addEllipses = TRUE, # Concentration ellipses
-             ellipse.type = "confidence",
-             legend.title = "Groups",
-             repel = TRUE
-)
-
-fviz_pca_ind(res.pca,
-             axes = c(1, 2),
-             label = "none", # hide individual labels
-             habillage = glmm_tests$Spec, # color by groups
-             palette = c("#00AFBB", "#E7B800"),
-             addEllipses = TRUE # Concentration ellipses
-)
-
-eig.val <- get_eigenvalue(res.pca)
-eig.val
-
-res.var <- get_pca_var(res.pca)
-res.var$coord          # Coordinates
-res.var$contrib        # Contributions to the PCs
-res.var$cos2           # Quality of representation 
-
-# Results for individuals
-res.ind <- get_pca_ind(res.pca)
-#res.ind$coord          # Coordinates
-#res.ind$contrib        # Contributions to the PCs
-#res.ind$cos2           # Quality of representation 
-
-
-glmm_tests$PC1 <- res.ind$coord[,1]
-glmm_tests$PC2 <- res.ind$coord[,2]
-
-#saveRDS(glmm_tests, "C:/Users/franc/OneDrive - McGill University/Documents/McGill/00Res Prop v2/Chap 2 - Tracks and overlap/glmm_testsPCA.RDS")
-
-
 backup<-glmm_tests
 #summary ALL TRIPS with PC1 and sinuosity 
-# PCA!!!!!!!!!!!!! (different file)
 
+#same file called earlier... to fix this in the workflow 
 glmm_testsPCA<-readRDS("C:/Users/francis van oordt/Documents/McGill/00Res Prop v2/Chap 2 - Tracks and overlap/glmm_testsPCA.RDS")
 #saveRDS(glmm_testsPCA, "C:/Users/francis van oordt/OneDrive - McGill University/Documents/McGill/00Res Prop v2/Chap 2 - Tracks and overlap/glmm_testsPCA.RDS")
 glmm_testsPCA$Year <- as.factor(glmm_testsPCA$Year)
