@@ -17,7 +17,8 @@ library(ggpubr)
 #setwd("C:/Users/francis van oordt/Documents/McGill/00Res Prop v2/Chap 2 - Tracks and overlap/")
 
 #original deployment csvs fused into 1 (2018, and 2019 gps, cams, and axxy)
-all_deps<-readRDS("C:/Users/francis van oordt/Documents/McGill/Field data/all_deployments.phys.RDS")
+all_deps<-readRDS("data/all_deployments.phys.RDS")
+#"E:/05BACKUP July 10 2024/Documents/McGill/00Res Prop v2/Chap 2 - Tracks and overlap/tracks_and_phys/tracks_and_phys/data"
 
 #full trips
 #SUMMAGPS<-read.csv("C:/Users/franc/OneDrive - McGill University/Documents/McGill/00Res Prop v2/Chap 2 - Tracks and overlap/SUMMAGPS.csv")
@@ -29,11 +30,8 @@ all_deps<-readRDS("C:/Users/francis van oordt/Documents/McGill/Field data/all_de
 #SUMMAGPS_1trip<-read.csv("C:/Users/francis van oordt/OneDrive - McGill University/Documents/McGill/00Res Prop v2/Chap 2 - Tracks and overlap/SUMMAGPS_1trip.csv")
 
 
-#is  SUMMAGPS and Sinuosity both species
-#glmm_tests<-readRDS("C:/Users/francis van oordt/OneDrive - McGill University/Documents/McGill/00Res Prop v2/Chap 2 - Tracks and overlap/glmm_tests.RDS")
-
-#glmm_with PCA already both species
-glmm_tests<-readRDS("C:/Users/francis van oordt/Documents/McGill/00Res Prop v2/Chap 2 - Tracks and overlap/glmm_testsPCA.RDS")
+#glmm with clean trips, Sinuosity, and  PCA calculations already both species
+glmm_tests<-readRDS("E:/05BACKUP July 10 2024/Documents/McGill/00Res Prop v2/Chap 2 - Tracks and overlap/glmm_testsPCA.RDS")
 
 
 #LMM model
@@ -48,7 +46,7 @@ glmm_tests$julian <- format(glmm_tests$startt, "%j")
 
 ###
 glmm_tests <- glmm_tests |>
- dplyr::filter(!is.na(Year)) |>
+  dplyr::filter(!is.na(Year)) |>
   #dplyr::filter(!tottime >20)|>#excluding trip of one bird that was tracked for 9 days
   dplyr::mutate(
     julian = as.numeric(julian),
@@ -69,9 +67,11 @@ glmm_tests <- glmm_tests |>
 
 
 #ggpairs(glmm_tests[,c("TimeTrip", "maxdist", "totdist","sinuos", "SP")], aes(colour = SP), progress = FALSE) +
- # theme_bw()
+# theme_bw()
 
 #obtain mean duration of trip value per year (median to avoid a couple of extremes)
+#for Axxy paper to estimate energy away with time budgets
+
 glmm_tests|>
   dplyr::group_by(dep_id, Day, Year)|>
   dplyr::summarise(
@@ -85,47 +85,49 @@ glmm_tests|>
 
 #check relationships of increased parameters in time pass by (days) totdist, TimeTrip, maxdist, sinous
 plot<- ggpubr::ggscatter(glmm_tests, y = "TimeTrip", x = "julian",
-          color = "black", shape = 21, #size = 3, # Points color, shape and size
-          add = "reg.line",  # Add regressin line
-          add.params = list(color = "blue", fill = "lightgray"), # Customize reg. line
-          conf.int = TRUE, # Add confidence interval
-          cor.coef = TRUE, # Add correlation coefficient. see ?stat_cor
-          cor.coeff.args = list(method = "pearson", #label.x = 3, 
-                                label.sep = "\n")
+                         color = "black", shape = 21, #size = 3, # Points color, shape and size
+                         add = "reg.line",  # Add regressin line
+                         add.params = list(color = "blue", fill = "lightgray"), # Customize reg. line
+                         conf.int = TRUE, # Add confidence interval
+                         cor.coef = TRUE, # Add correlation coefficient. see ?stat_cor
+                         cor.coeff.args = list(method = "pearson", #label.x = 3, 
+                                               label.sep = "\n")
 )
 ggpubr::facet(plot, facet.by = "Year", scales = "free")
 
 ###################################################################################
 #models with covariate and fixed effects, fixed slopes
+# latest version, all models with nlme::lme
 
 #TOTAL TRIP DURATION time trip
-options(na.action = "na.omit")
-glmm_TripDur <- lme4::lmer(log(TimeTrip) ~ #TimeTrip log_Time
-                     Year*Spec +
-                     (1 | dep_id),
-                   REML = FALSE,  
-                   data = glmm_tests)
 
-summary(glmm_TripDur)
-plot(glmm_TripDur, type = c("p", "smooth"))
-plot(glmm_TripDur, sqrt(abs(resid(.))) ~ fitted(.), type =c("p", "smooth"))
+#options(na.action = "na.omit")
+#glmm_TripDur <- lme4::lmer(log(TimeTrip) ~ #TimeTrip log_Time
+#                    Year*Spec +
+#                   (1 | dep_id),
+#                REML = FALSE,  
+#               data = glmm_tests)
 
-plot(resid(glmm_TripDur),log(glmm_tests$TimeTrip))
-lattice::qqmath(glmm_TripDur, id=0.05)
-boxplot(resid(glmm_TripDur)~ interaction(glmm_tests$Year, glmm_tests$Spec))
+#summary(glmm_TripDur)
+#plot(glmm_TripDur, type = c("p", "smooth"))
+#plot(glmm_TripDur, sqrt(abs(resid(.))) ~ fitted(.), type =c("p", "smooth"))
 
-car::leveneTest(resid(glmm_TripDur), interaction(glmm_tests$Year, glmm_tests$Spec))
-car::influencePlot(glmm_TripDur)
+#plot(resid(glmm_TripDur),log(glmm_tests$TimeTrip))
+#lattice::qqmath(glmm_TripDur, id=0.05)
+#boxplot(resid(glmm_TripDur)~ interaction(glmm_tests$Year, glmm_tests$Spec))
+
+#car::leveneTest(resid(glmm_TripDur), interaction(glmm_tests$Year, glmm_tests$Spec))
+#car::influencePlot(glmm_TripDur)
 
 
 
 options(na.action = "na.omit")
 glmm_TripDur <- nlme::lme( log(TimeTrip) ~ #log_TotDist totdist
-                        Year*Spec, 
-                      random = ~1|dep_id, 
-                      method = "ML",
-                      weights = nlme::varIdent(form = ~ 1 | Year*Spec),
-                      data = glmm_tests)
+                             Year*Spec, 
+                           random = ~1|dep_id, 
+                           method = "ML",
+                           weights = nlme::varIdent(form = ~ 1 | Year*Spec), #activated after testing without
+                           data = glmm_tests)
 
 summary(glmm_TripDur)
 plot(glmm_TripDur)
@@ -144,14 +146,14 @@ lme.formula <- nlme::lme.formula # only need to call the function once
 aic_TripDur<-MuMIn::dredge(global.model = glmm_TripDur )
 aic_TripDur
 
-
+#best model of Trip Duration (time): Year only
 options(na.action = "na.omit")
 glmm_TripDurB <- nlme::lme( log(TimeTrip) ~ #log_TotDist totdist
-                       Year, 
-                     random = ~1|dep_id, 
-                     method = "REML",
-                     weights = nlme::varIdent(form = ~ 1 | Year*Spec),
-                     data = glmm_tests[order(glmm_tests$Spec),])
+                              Year, 
+                            random = ~1|dep_id, 
+                            method = "REML",
+                            weights = nlme::varIdent(form = ~ 1 | Year),
+                            data = glmm_tests[order(glmm_tests$Spec),])
 
 
 summary(glmm_TripDurB)
@@ -159,47 +161,47 @@ summary(glmm_TripDurB)
 plot(glmm_TripDurB)
 plot(residuals(glmm_TripDurB, type = "pearson"), log(glmm_tests$TimeTrip))
 qqnorm(glmm_TripDurB, ~ residuals(., type = "p"), abline = c(0, 1))
-boxplot(residuals(glmm_TripDurB, type = "pearson")~ interaction(glmm_tests$Year, glmm_tests$Spec))
+boxplot(residuals(glmm_TripDurB, type = "pearson")~ interaction(glmm_tests$Year))
 
 
 TripDurBmeans<-ggeffects::ggemmeans(model = glmm_TripDurB, 
-                     terms = c('Year'),
-                     ci.lvl = 0.95,
-                     type = "fe",
-                     typical = "mean",
-                     condition = NULL,
-                     back.transform = FALSE,
-                     interval = "confidence")
+                                    terms = c('Year'),
+                                    ci.lvl = 0.95,
+                                    type = "fe",
+                                    typical = "mean",
+                                    condition = NULL,
+                                    back.transform = FALSE,
+                                    interval = "confidence")
 
 #plots 
 #TIMETRIP YEAR AND SPECIES
-A2<-ggplot(data= glmm_tests, aes(x=Year, y=log(TimeTrip), color = Year))+ #, color = Spec
-  geom_point(position = position_jitter(height = 0, width = 0.1),
-             alpha = 0.3)+
-  scale_color_manual(values= c("magenta4", "darkgreen"))+
-  geom_pointrange(data=ggeffects::ggemmeans(model = glmm_TripDurB, 
-                                 terms = c('Year'),
-                                 ci.lvl = 0.95,
-                                 type = "fe",
-                                 typical = "mean",
-                                 back.transform = FALSE,
-                                 condition = NULL) ,
-                  aes(x = x, y = predicted, 
-                      ymin = predicted-std.error, ymax = predicted+std.error, color = x))+
-  xlab(NULL)+
-  ylab("Total trip duration (log)")+
-  guides(color = "none")+
-  theme_bw()
+A2<-ggplot2::ggplot(data= glmm_tests, ggplot2::aes(x=Year, y=log(TimeTrip), color = Year))+ #, color = Spec
+  ggplot2::geom_point(position = ggplot2::position_jitter(height = 0, width = 0.1),
+                      alpha = 0.3)+
+  ggplot2::scale_color_manual(values= c("magenta4", "darkgreen"))+
+  ggplot2::geom_pointrange(data=ggeffects::ggemmeans(model = glmm_TripDurB, 
+                                                     terms = c('Year'),
+                                                     ci_lvl = 0.95,
+                                                     type = "fe",
+                                                     typical = "mean",
+                                                     back_transform = FALSE,
+                                                     condition = NULL) ,
+                           ggplot2::aes(x = x, y = predicted, 
+                                        ymin = predicted-std.error, ymax = predicted+std.error, color = x))+
+  ggplot2::xlab(NULL)+
+  ggplot2::ylab("Total trip duration (log)")+
+  ggplot2::guides(color = "none")+
+  ggplot2::theme_bw()
 
 
 
 #TOTAL DISTANCE trip path
 options(na.action = "na.omit")
 glmm_TripPath <- lme4::lmer( log(totdist) ~ #log_TotDist totdist
-                        Year*Spec +
-                        (1 | dep_id),
-                      REML = FALSE,  
-                      data = glmm_tests)
+                               Year*Spec +
+                               (1 | dep_id),
+                             REML = FALSE,  
+                             data = glmm_tests)
 
 options(na.action = "na.fail")
 aic_TripPath<-MuMIn::dredge(glmm_TripPath)
@@ -214,11 +216,11 @@ car::leveneTest(resid(glmm_TripPath), interaction(glmm_tests$Year, glmm_tests$Sp
 
 
 glmm_TripPath <- nlme::lme( log(totdist) ~ #log_TotDist totdist
-                         Year*Spec, 
-                         random = ~1|dep_id, 
-                      method = "ML",
-                      weights =  nlme::varIdent(form = ~ 1 | Year*Spec),
-                       data = glmm_tests)
+                              Year*Spec, 
+                            random = ~1|dep_id, 
+                            method = "ML",
+                            weights =  nlme::varIdent(form = ~ 1 | Year*Spec),
+                            data = glmm_tests)
 
 summary(glmm_TripPath)
 car::leveneTest(residuals(glmm_TripPath, type = "pearson"), interaction(glmm_tests$Year, glmm_tests$Spec))
@@ -232,11 +234,11 @@ aic_TripPath<-MuMIn::dredge(glmm_TripPath)
 aic_TripPath
 
 glmm_TripPathB <- nlme::lme( log(totdist) ~ #log_TotDist totdist
-                        Spec, 
-                      random = ~1|dep_id, 
-                      method = "REML",
-                      weights = nlme::varIdent(form = ~ 1 | Spec),
-                      data = glmm_tests[order(glmm_tests$Spec),])
+                               Spec, 
+                             random = ~1|dep_id, 
+                             method = "REML",
+                             weights = nlme::varIdent(form = ~ 1 | Spec),
+                             data = glmm_tests[order(glmm_tests$Spec),])
 
 summary(glmm_TripPathB)
 car::leveneTest(residuals(glmm_TripPathB, type = "pearson")~interaction(glmm_tests$Spec))
@@ -250,13 +252,13 @@ qqnorm(glmm_TripPathB, ~ residuals(., type = "p"), abline = c(0, 1))
 
 
 TripPathBmeans<-ggeffects::ggemmeans(model = glmm_TripPathB, 
-                     terms = c('Spec'),
-                     ci.lvl = 0.95,
-                     type = "fe",
-                     typical = "mean",
-                     condition = NULL,
-                     back.transform = FALSE,
-                     interval = "confidence")
+                                     terms = c('Spec'),
+                                     ci.lvl = 0.95,
+                                     type = "fe",
+                                     typical = "mean",
+                                     condition = NULL,
+                                     back.transform = FALSE,
+                                     interval = "confidence")
 
 
 
@@ -265,18 +267,18 @@ B2<-ggplot(data= glmm_tests, aes(x=Spec, y=log(totdist), color = Spec ))+
   geom_point(position  = position_jitter(height = 0, width = 0.1),
              alpha = 0.3)+
   geom_pointrange(data=ggeffects::ggemmeans(model = glmm_TripPathB, 
-                                 terms = c('Spec'),
-                                 ci.lvl = 0.95,
-                                 type = "fe",
-                                 typical = "mean",
-                                 condition = NULL,
-                                 back.transform = FALSE) ,
+                                            terms = c('Spec'),
+                                            ci.lvl = 0.95,
+                                            type = "fe",
+                                            typical = "mean",
+                                            condition = NULL,
+                                            back.transform = FALSE) ,
                   aes(x = x, y = predicted, 
                       ymin = predicted-std.error, 
                       ymax = predicted+std.error, 
                       color = x),
-                      position = position_jitterdodge(dodge.width = 0.3, jitter.height = 0, jitter.width = 0.1)
-                      )+
+                  position = position_jitterdodge(dodge.width = 0.3, jitter.height = 0, jitter.width = 0.1)
+  )+
   xlab(NULL)+
   ylab("Total trip path")+
   guides(color = "none")+
@@ -285,11 +287,11 @@ B2<-ggplot(data= glmm_tests, aes(x=Spec, y=log(totdist), color = Spec ))+
 #to include Year and Species as second best model
 
 glmm_TripPathA <- nlme::lme( log(totdist) ~ #log_TotDist totdist
-                         Spec+Year, 
-                       random = ~1|dep_id, 
-                       method = "REML",
-                       weights =  nlme::varIdent(form = ~ 1 | Spec),
-                       data = glmm_tests[order(glmm_tests$Spec),])
+                               Spec+Year, 
+                             random = ~1|dep_id, 
+                             method = "REML",
+                             weights =  nlme::varIdent(form = ~ 1 | Spec),
+                             data = glmm_tests[order(glmm_tests$Spec),])
 
 summary(glmm_TripPathA)
 car::leveneTest(residuals(glmm_TripPathA, type = "pearson")~interaction(glmm_tests$Spec))
@@ -318,13 +320,13 @@ B2A<-ggplot(data= glmm_tests, aes(x=Year, y=log(totdist), color = Spec ))+
   geom_point(position = position_jitterdodge(dodge.width = 0.3, jitter.height = 0, jitter.width = 0.1),
              alpha = 0.3)+
   geom_pointrange(data=ggeffects::ggemmeans(model = glmm_TripPathA, 
-                                 terms = c('Year', 'Spec'),
-                                 ci.lvl = 0.95,
-                                 type = "fe",
-                                 typical = "mean",
-                                 condition = NULL,
-                                 back.transform = FALSE,
-                                 interval = "confidence"),
+                                            terms = c('Year', 'Spec'),
+                                            ci.lvl = 0.95,
+                                            type = "fe",
+                                            typical = "mean",
+                                            condition = NULL,
+                                            back.transform = FALSE,
+                                            interval = "confidence"),
                   aes(x = x, y = predicted, 
                       ymin = predicted-std.error, 
                       ymax = predicted+std.error, 
@@ -341,10 +343,10 @@ B2A
 #MAX DISTANCE
 options(na.action = "na.omit")
 glmm_MaxDist <- lme4::lmer( log(maxdist) ~  #log_MaxDist maxdist
-                         Year*Spec +
-                         (1 | dep_id),
-                       REML = FALSE,  
-                       data = glmm_tests)
+                              Year*Spec +
+                              (1 | dep_id),
+                            REML = FALSE,  
+                            data = glmm_tests)
 
 options(na.action = "na.fail")
 aic_MaxDist<-MuMIn::dredge(glmm_MaxDist)
@@ -358,11 +360,11 @@ car::leveneTest(resid(glmm_MaxDist), interaction(glmm_tests$Year, glmm_tests$Spe
 
 
 glmm_MaxDist <- nlme::lme( log(maxdist) ~ #log_TotDist totdist
-                        Year*Spec, 
-                      random = ~1|dep_id, 
-                      method = "ML",
-                      weights = nlme::varIdent(form = ~ 1 | Year*Spec),
-                      data = glmm_tests)
+                             Year*Spec, 
+                           random = ~1|dep_id, 
+                           method = "ML",
+                           weights = nlme::varIdent(form = ~ 1 | Year*Spec),
+                           data = glmm_tests)
 
 summary(glmm_MaxDist)
 car::leveneTest(residuals(glmm_MaxDist, type = "pearson"), interaction(glmm_tests$Year, glmm_tests$Spec))
@@ -378,11 +380,11 @@ aic_MaxDist
 
 #best parsim model for max dist
 glmm_MaxDistB <- nlme::lme( log(maxdist) ~ #log_TotDist totdist
-                         Spec, 
-                       random = ~1|dep_id, 
-                       method = "REML",
-                       weights = nlme::varIdent(form = ~ 1 | Spec),
-                       data = glmm_tests[order(glmm_tests$Spec),])
+                              Spec, 
+                            random = ~1|dep_id, 
+                            method = "REML",
+                            weights = nlme::varIdent(form = ~ 1 | Spec),
+                            data = glmm_tests[order(glmm_tests$Spec),])
 
 car::leveneTest(residuals(glmm_MaxDistB, type = "pearson"), interaction(glmm_tests$Spec))
 plot(glmm_MaxDistB)
@@ -391,24 +393,24 @@ plot(resid(glmm_MaxDistB),log(glmm_tests$maxdist))
 boxplot(residuals(glmm_MaxDistB, type= "pearson")~ interaction( glmm_tests$Spec))
 
 MaxDistB<-ggeffects::ggemmeans(model = glmm_MaxDistB, 
-                     terms = c('Spec'),
-                     ci.lvl = 0.95,
-                     type = "fe",
-                     typical = "mean",
-                     condition = NULL,
-                     back.transform = FALSE,
-                     interval = "confidence")
+                               terms = c('Spec'),
+                               ci.lvl = 0.95,
+                               type = "fe",
+                               typical = "mean",
+                               condition = NULL,
+                               back.transform = FALSE,
+                               interval = "confidence")
 
 C2<-ggplot(data= glmm_tests, aes(x=Spec, y=log(maxdist), color = Spec ))+ 
   geom_point(position = position_jitter(height = 0, width = 0.1),
              alpha = 0.3)+
   geom_pointrange(data=ggeffects::ggemmeans(model = glmm_MaxDistB, 
-                                 terms = c('Spec'),
-                                 ci.lvl = 0.95,
-                                 type = "fe",
-                                 typical = "mean",
-                                 condition = NULL,
-                                 back.transform = FALSE) ,
+                                            terms = c('Spec'),
+                                            ci.lvl = 0.95,
+                                            type = "fe",
+                                            typical = "mean",
+                                            condition = NULL,
+                                            back.transform = FALSE) ,
                   aes(x = x, y = predicted, 
                       ymin = predicted-std.error, ymax = predicted+std.error, color = x))+
   xlab(NULL)+
@@ -422,11 +424,11 @@ C2
 #to plot model with year and spec for max dist
 
 glmm_MaxDistA <- nlme::lme( log(maxdist) ~ #log_TotDist totdist
-                        Spec + Year, 
-                      random = ~1|dep_id, 
-                      method = "REML",
-                      weights = nlme::varIdent(form = ~ 1 | Year*Spec),
-                      data = glmm_tests[order(glmm_tests$Spec),])
+                              Spec + Year, 
+                            random = ~1|dep_id, 
+                            method = "REML",
+                            weights = nlme::varIdent(form = ~ 1 | Year*Spec),
+                            data = glmm_tests[order(glmm_tests$Spec),])
 
 car::leveneTest(residuals(glmm_MaxDistB, type = "pearson"), interaction(glmm_tests$Year, glmm_tests$Spec))
 plot(glmm_MaxDistB)
@@ -447,13 +449,13 @@ C2A<-ggplot(data= glmm_tests, aes(x=Year, y=log(maxdist), color = Spec ))+
   geom_point(position = position_jitterdodge(dodge.width = 0.3, jitter.height = 0, jitter.width = 0.1),
              alpha = 0.3)+
   geom_pointrange(data=ggeffects::ggemmeans(model = glmm_MaxDistA, 
-                                 terms = c('Year', 'Spec'),
-                                 ci.lvl = 0.95,
-                                 type = "fe",
-                                 typical = "mean",
-                                 condition = NULL,
-                                 back.transform = FALSE,
-                                 interval = "confidence") ,
+                                            terms = c('Year', 'Spec'),
+                                            ci.lvl = 0.95,
+                                            type = "fe",
+                                            typical = "mean",
+                                            condition = NULL,
+                                            back.transform = FALSE,
+                                            interval = "confidence") ,
                   aes(x = x, y = predicted, 
                       ymin = predicted-std.error, ymax = predicted+std.error, 
                       color = group), 
@@ -470,10 +472,10 @@ C2A
 #SINUOSITY
 options(na.action = "na.omit")
 glmm_sin <- lme4::lmer( log(sinuos) ~ #sinuos log10(sinuos)
-                        Year*Spec +
-                        (1 | dep_id),
-                      REML = FALSE,  
-                      data = glmm_tests)
+                          Year*Spec +
+                          (1 | dep_id),
+                        REML = FALSE,  
+                        data = glmm_tests)
 
 options(na.action = "na.fail")
 aic_sin<-MuMIn::dredge(glmm_sin)
@@ -490,11 +492,11 @@ car::leveneTest(resid(glmm_sin), interaction(glmm_tests$Year, glmm_tests$Spec))
 
 
 #glmm_sin <- lme( log(sinuos) ~ #log_TotDist totdist
- #                    Spec*Year, 
-  #                  random = ~1|dep_id, 
-   #                  method = "ML",
-    #                 weights = nlme::varIdent(form = ~ 1 | Spec*Year),
-     #                data = glmm_tests)
+#                    Spec*Year, 
+#                  random = ~1|dep_id, 
+#                  method = "ML",
+#                 weights = nlme::varIdent(form = ~ 1 | Spec*Year),
+#                data = glmm_tests)
 
 #summary(glmm_sin)
 #car::leveneTest(residuals(glmm_sin, type = "pearson"), interaction(glmm_tests$Year, glmm_tests$Spec))
@@ -511,40 +513,40 @@ car::leveneTest(resid(glmm_sin), interaction(glmm_tests$Year, glmm_tests$Spec))
 #aic_sin
 
 glmm_sin <- nlme::lme( log(sinuos) ~ #log_TotDist totdist
-                   Spec*Year, 
-                 random = ~1|dep_id, 
-                 method = "REML",
-                 weights = nlme::varIdent(form = ~ 1 | Year*Spec),
-                 data = glmm_tests[order(glmm_tests$Spec),])
+                         Spec*Year, 
+                       random = ~1|dep_id, 
+                       method = "REML",
+                       weights = nlme::varIdent(form = ~ 1 | Year*Spec),
+                       data = glmm_tests[order(glmm_tests$Spec),])
 
 sinmeans<-ggeffects::ggemmeans(model = glmm_sin, 
-                     terms = c('Spec', 'Year'),
-                     ci.lvl = 0.95,
-                     type = "fe",
-                     typical = "mean",
-                     condition = NULL,
-                     back.transform = FALSE,
-                     interval = "confidence")
+                               terms = c('Spec', 'Year'),
+                               ci.lvl = 0.95,
+                               type = "fe",
+                               typical = "mean",
+                               condition = NULL,
+                               back.transform = FALSE,
+                               interval = "confidence")
 
 
 ##
 D2<-ggplot(data= glmm_tests, aes(x=Year, y=log(sinuos), color = Spec))+ #, linetype = Year
   geom_point(position = position_jitterdodge(dodge.width = 0.3, jitter.height = 0, jitter.width = 0.1),
-            alpha = 0.3)+
+             alpha = 0.3)+
   geom_pointrange(data=ggeffects::ggemmeans(model = glmm_sin, 
-                             terms = c('Year', 'Spec'),
-                             ci.lvl = 0.95,
-                             type = "fe",
-                             typical = "mean",
-                             condition = NULL,
-                             back.transform = FALSE,
-                             interval = "confidence") ,
-              aes(x = x, y = predicted, 
-                  ymin = predicted-std.error, ymax = predicted+std.error,
-                  color = group), 
-              position = position_jitterdodge(dodge.width = 0.3, jitter.height = 0, jitter.width = 0.1) )+#,, linetype = facet
-              #method = "lm"
-             
+                                            terms = c('Year', 'Spec'),
+                                            ci.lvl = 0.95,
+                                            type = "fe",
+                                            typical = "mean",
+                                            condition = NULL,
+                                            back.transform = FALSE,
+                                            interval = "confidence") ,
+                  aes(x = x, y = predicted, 
+                      ymin = predicted-std.error, ymax = predicted+std.error,
+                      color = group), 
+                  position = position_jitterdodge(dodge.width = 0.3, jitter.height = 0, jitter.width = 0.1) )+#,, linetype = facet
+  #method = "lm"
+  
   xlab(NULL)+
   ylab("Sinuosity")+
   guides(color = "none")+
@@ -652,10 +654,10 @@ glmm_tests<-glmm_testsPCA
 #PCA models
 options(na.action = "na.omit")
 glmm_PCAeffort <- lme4::lmer(PC1 ~
-                         log(sinuos)*Year*Spec +
-                       (1 | dep_id),
-                     REML = FALSE,  
-                     data = glmm_tests)
+                               log(sinuos)*Year*Spec +
+                               (1 | dep_id),
+                             REML = FALSE,  
+                             data = glmm_tests)
 
 summary(glmm_PCAeffort)
 plot(glmm_PCAeffort)
@@ -668,11 +670,11 @@ car::leveneTest(resid(glmm_PCAeffort), interaction(glmm_tests$Year, glmm_tests$S
 
 options(na.action = "na.omit")
 glmm_PCAeffort <- nlme::lme( PC1 ~ 
-                         log(sinuos)*Year*Spec , 
-                     random = ~1|dep_id, 
-                     method = "ML",
-                     weights = nlme::varIdent(form = ~ 1 | Year*Spec),
-                     data = glmm_tests)
+                               log(sinuos)*Year*Spec , 
+                             random = ~1|dep_id, 
+                             method = "ML",
+                             weights = nlme::varIdent(form = ~ 1 | Year*Spec),
+                             data = glmm_tests)
 
 summary(glmm_PCAeffort)
 plot(glmm_PCAeffort)
@@ -690,12 +692,12 @@ aic_effortPCA
 
 options(na.action = "na.omit")
 glmm_PCAeffortB <- nlme::lme( PC1 ~ 
-                        log(sinuos)*Year+
-                        Spec*Year, 
-                       random = ~1|dep_id, 
-                       method = "REML",
-                       weights = nlme::varIdent(form = ~ 1 | Year*Spec),
-                       data = glmm_tests[order(glmm_tests$Spec),])
+                                log(sinuos)*Year+
+                                Spec*Year, 
+                              random = ~1|dep_id, 
+                              method = "REML",
+                              weights = nlme::varIdent(form = ~ 1 | Year*Spec),
+                              data = glmm_tests[order(glmm_tests$Spec),])
 
 summary(glmm_PCAeffortB)
 plot(glmm_PCAeffortB)
@@ -712,7 +714,7 @@ sjPlot::plot_model(glmm_PCAeffortB, type = "pred", terms = c("sinuos [exp]","Yea
                    axis.labels = "Foraging Effort (PC1)" ,#c("Foraging Effort (PC1)", "Sinuosity (log)")
                    #se=TRUE,
                    #pred.type = "re"
-                   )
+)
 
 #no data (check why the added data plot makes the curves the SAME!!!!!!!!!!!!!)
 ggplot()+
@@ -743,7 +745,7 @@ meanModPCAsinu<-ggeffects::ggpredict(
   ci.lvl = 0.95,
   type = "fe"
   ,  typical = "mean"
-  )
+)
 
 #save aic table for PC1 effort year spec and sinous
 aic_effortPCA.df <- as.data.frame(aic_effortPCA)
@@ -770,10 +772,10 @@ forEffort_plot <-ggplot()+
     typical = "mean",
     back.transform = FALSE,
     interval = "confidence"),
-              aes(x = (x), y = (predicted), color = group),
-              method = "lm",
+    aes(x = (x), y = (predicted), color = group),
+    method = "lm",
     fullrange=TRUE
-    )+
+  )+
   xlab("Sinuosity (log)")+
   ylab("Foraging effort (PC1)")+
   #labs(title = "Foraging Effort in Guano Seabirds")+
@@ -788,15 +790,15 @@ ggplot2::ggsave("plots/forEffort_plotModel.png", forEffort_plot, dpi = 300, bg =
 
 
 plot(ggeffects::ggpredict(glmm_PCAeffortB, terms = c("Year","Spec"), type = "re",
-               typical = "mean"))
+                          typical = "mean"))
 
 options(na.action = "na.omit")
 newMod<-nlme::lme( log(as.numeric(TimeTrip) )~ 
-       log(sinuos)*Year*Spec , 
-     random = ~1|dep_id, 
-     method = "ML",
-     weights = nlme::varIdent(form = ~ 1 | Year*Spec),
-     data = glmm_tests)
+                     log(sinuos)*Year*Spec , 
+                   random = ~1|dep_id, 
+                   method = "ML",
+                   weights = nlme::varIdent(form = ~ 1 | Year*Spec),
+                   data = glmm_tests)
 summary(newMod)
 plot(newMod)
 plot(residuals(newMod, type = "pearson"), log(as.numeric(glmm_tests$TimeTrip)))
@@ -831,7 +833,7 @@ glmm_tests <- glmm_tests|>
 glmm_testsglu <- glmm_tests |>
   dplyr::filter(!is.na(glu))|>
   dplyr::filter(!(Year == 2018))
-  
+
 par(mfrow = c(2, 2))
 
 summary(lm(log(glmm_testsglu$glu)~ log(glmm_testsglu$timeDAY)))
@@ -978,13 +980,13 @@ aic_lmGluSP
 
 
 glumod2019<-ggeffects::ggemmeans(model = glumod, 
-                                    terms = c('SP'),
-                                    ci.lvl = 0.95,
-                                    type = "fe",
-                                    typical = "mean",
-                                    condition = NULL,
-                                    back.transform = FALSE,
-                                    interval = "confidence")
+                                 terms = c('SP'),
+                                 ci.lvl = 0.95,
+                                 type = "fe",
+                                 typical = "mean",
+                                 condition = NULL,
+                                 back.transform = FALSE,
+                                 interval = "confidence")
 
 #plots 
 glu2<-ggplot(data= phys, aes(x=SP, y=log(glu), color = SP))+ #, color = Spec
@@ -992,12 +994,12 @@ glu2<-ggplot(data= phys, aes(x=SP, y=log(glu), color = SP))+ #, color = Spec
              alpha = 0.3)+
   #scale_color_manual(values= c("magenta4", "darkgreen"))+
   geom_pointrange(data=ggeffects::ggemmeans(model = glumod, 
-                                 terms = c('SP'),
-                                 ci.lvl = 0.95,
-                                 type = "fe",
-                                 typical = "mean",
-                                 back.transform = FALSE,
-                                 condition = NULL) ,
+                                            terms = c('SP'),
+                                            ci.lvl = 0.95,
+                                            type = "fe",
+                                            typical = "mean",
+                                            back.transform = FALSE,
+                                            condition = NULL) ,
                   aes(x = x, y = predicted, 
                       ymin = predicted-std.error, ymax = predicted+std.error, color = x))+
   xlab(NULL)+
@@ -1039,13 +1041,13 @@ aic_lmCholSP<-MuMIn::model.sel(cholmod0, cholmod)
 aic_lmCholSP
 
 cholmod2019<-ggeffects::ggemmeans(model = cholmod, 
-                                 terms = c('SP'),
-                                 ci.lvl = 0.95,
-                                 type = "fe",
-                                 typical = "mean",
-                                 condition = NULL,
-                                 back.transform = FALSE,
-                                 interval = "confidence")
+                                  terms = c('SP'),
+                                  ci.lvl = 0.95,
+                                  type = "fe",
+                                  typical = "mean",
+                                  condition = NULL,
+                                  back.transform = FALSE,
+                                  interval = "confidence")
 
 #plots 
 chol2<-ggplot(data= phys, aes(x=SP, y=log(chol), color = SP))+ #, color = Spec
@@ -1053,12 +1055,12 @@ chol2<-ggplot(data= phys, aes(x=SP, y=log(chol), color = SP))+ #, color = Spec
              alpha = 0.3)+
   #scale_color_manual(values= c("magenta4", "darkgreen"))+
   geom_pointrange(data=ggeffects::ggemmeans(model = cholmod, 
-                                 terms = c('SP'),
-                                 ci.lvl = 0.95,
-                                 type = "fe",
-                                 typical = "mean",
-                                 back.transform = FALSE,
-                                 condition = NULL) ,
+                                            terms = c('SP'),
+                                            ci.lvl = 0.95,
+                                            type = "fe",
+                                            typical = "mean",
+                                            back.transform = FALSE,
+                                            condition = NULL) ,
                   aes(x = x, y = predicted, 
                       ymin = predicted-std.error, ymax = predicted+std.error, color = x))+
   xlab(NULL)+
@@ -1066,7 +1068,7 @@ chol2<-ggplot(data= phys, aes(x=SP, y=log(chol), color = SP))+ #, color = Spec
   guides(color = "none")+
   theme_bw()+
   theme(text= ggplot2::element_text(size=20),
-    axis.text.x=element_blank())
+        axis.text.x=element_blank())
 
 chol2
 
@@ -1093,10 +1095,10 @@ boxplot(resid(trimod) ~ interaction(phys$Year, phys$SP))
 
 
 trimod <- nlme::lme( log(tri)~ SP, 
-               random = ~1|DepID, 
-               method = "REML",
-               weights = nlme::varIdent(form = ~ 1 | SP),
-               data = phys[order(phys$SP),])
+                     random = ~1|DepID, 
+                     method = "REML",
+                     weights = nlme::varIdent(form = ~ 1 | SP),
+                     data = phys[order(phys$SP),])
 
 car::leveneTest(residuals(trimod, type = "pearson"), interaction(phys$SP))
 boxplot(residuals(trimod, type = "pearson") ~ interaction(phys$SP))
@@ -1104,10 +1106,10 @@ boxplot(residuals(trimod, type = "pearson") ~ interaction(phys$SP))
 summary(trimod)
 
 trimod0 <- nlme::lme( log(tri)~ 1, 
-               random = ~1|DepID, 
-               method = "REML",
-               weights = nlme::varIdent(form = ~ 1 | SP),
-               data = phys[order(phys$SP),])
+                      random = ~1|DepID, 
+                      method = "REML",
+                      weights = nlme::varIdent(form = ~ 1 | SP),
+                      data = phys[order(phys$SP),])
 
 options(na.action = "na.fail")
 aic_lmTriSP<-MuMIn::model.sel(trimod0, trimod)
@@ -1116,13 +1118,13 @@ aic_lmTriSP
 
 
 trimod2019<-ggeffects::ggemmeans(model = trimod, 
-                                  terms = c('SP'),
-                                  ci.lvl = 0.95,
-                                  type = "fe",
-                                  typical = "mean",
-                                  condition = NULL,
-                                  back.transform = FALSE,
-                                  interval = "confidence")
+                                 terms = c('SP'),
+                                 ci.lvl = 0.95,
+                                 type = "fe",
+                                 typical = "mean",
+                                 condition = NULL,
+                                 back.transform = FALSE,
+                                 interval = "confidence")
 
 # 
 
@@ -1131,12 +1133,12 @@ tri2<-ggplot(data= phys, aes(x=SP, y=log(tri), color = SP))+ #, color = Spec
              alpha = 0.3)+
   #scale_color_manual(values= c("magenta4", "darkgreen"))+
   geom_pointrange(data=ggeffects::ggemmeans(model = trimod, 
-                                 terms = c('SP'),
-                                 ci.lvl = 0.95,
-                                 type = "fe",
-                                 typical = "mean",
-                                 back.transform = FALSE,
-                                 condition = NULL) ,
+                                            terms = c('SP'),
+                                            ci.lvl = 0.95,
+                                            type = "fe",
+                                            typical = "mean",
+                                            back.transform = FALSE,
+                                            condition = NULL) ,
                   aes(x = x, y = predicted, 
                       ymin = predicted-std.error, ymax = predicted+std.error, color = x))+
   xlab(NULL)+
@@ -1190,12 +1192,12 @@ ket2<-ggplot(data= phys, aes(x=SP, y=log(ket), color = SP))+ #, color = Spec
              alpha = 0.3)+
   #scale_color_manual(values= c("magenta4", "darkgreen"))+
   geom_pointrange(data=ggeffects::ggemmeans(model = ketmod, 
-                                 terms = c('SP'),
-                                 ci.lvl = 0.95,
-                                 type = "fe",
-                                 typical = "mean",
-                                 back.transform = FALSE,
-                                 condition = NULL) ,
+                                            terms = c('SP'),
+                                            ci.lvl = 0.95,
+                                            type = "fe",
+                                            typical = "mean",
+                                            back.transform = FALSE,
+                                            condition = NULL) ,
                   aes(x = x, y = predicted, 
                       ymin = predicted-std.error, ymax = predicted+std.error, color = x))+
   xlab(NULL)+
@@ -1264,20 +1266,20 @@ boxplot(resid(glumodP) ~ interaction(phys$Year))
 
 
 glumodP <- nlme::lme( log(glu)~ Year, 
-               random = ~1|DepID, 
-               method = "REML",
-               weights = nlme::varIdent(form = ~ 1 | Year),
-               data = phys[order(phys$Year),])
+                      random = ~1|DepID, 
+                      method = "REML",
+                      weights = nlme::varIdent(form = ~ 1 | Year),
+                      data = phys[order(phys$Year),])
 car::leveneTest(residuals(glumodP, type = "pearson"), interaction(phys$Year))
 boxplot(residuals(glumodP, type = "pearson") ~ interaction(phys$Year))
 
 summary(glumodP)
 
 glumodP0 <- nlme::lme( log(glu)~ 1, 
-                random = ~1|DepID, 
-                method = "REML",
-                weights = nlme::varIdent(form = ~ 1 | Year),
-                data = phys[order(phys$Year),])
+                       random = ~1|DepID, 
+                       method = "REML",
+                       weights = nlme::varIdent(form = ~ 1 | Year),
+                       data = phys[order(phys$Year),])
 
 options(na.action = "na.fail")
 
@@ -1287,13 +1289,13 @@ aic_lmGLUPeb
 
 
 meanglumodP<-ggeffects::ggemmeans(model = glumodP, 
-                                 terms = c('Year'),
-                                 ci.lvl = 0.95,
-                                 type = "fe",
-                                 typical = "mean",
-                                 condition = NULL,
-                                 back.transform = FALSE,
-                                 interval = "confidence")
+                                  terms = c('Year'),
+                                  ci.lvl = 0.95,
+                                  type = "fe",
+                                  typical = "mean",
+                                  condition = NULL,
+                                  back.transform = FALSE,
+                                  interval = "confidence")
 
 #plots 
 gluPEBO<-ggplot(data= phys, aes(x=Year, y=log(glu), color = Year))+ #, color = Spec
@@ -1302,12 +1304,12 @@ gluPEBO<-ggplot(data= phys, aes(x=Year, y=log(glu), color = Year))+ #, color = S
   scale_color_manual(values= c("#0072B2", "#00BFC4"))+
   #scale_color_manual(values= c("magenta4", "darkgreen"))+
   geom_pointrange(data=ggeffects::ggemmeans(model = glumodP, 
-                                 terms = c('Year'),
-                                 ci.lvl = 0.95,
-                                 type = "fe",
-                                 typical = "mean",
-                                 back.transform = FALSE,
-                                 condition = NULL) ,
+                                            terms = c('Year'),
+                                            ci.lvl = 0.95,
+                                            type = "fe",
+                                            typical = "mean",
+                                            back.transform = FALSE,
+                                            condition = NULL) ,
                   aes(x = x, y = predicted, 
                       ymin = predicted-std.error, ymax = predicted+std.error, color = x))+
   xlab(NULL)+
@@ -1342,10 +1344,10 @@ boxplot(resid(cholmodP) ~ interaction(phys$Year))
 
 ###ACCOUNTING FOR DIFF VARIANCES
 cholmodP <- nlme::lme( log(chol)~ Year, 
-                random = ~1|DepID, 
-                method = "ML",
-                weights = nlme::varIdent(form = ~ 1 | Year),
-                data = phys[order(phys$Year),])
+                       random = ~1|DepID, 
+                       method = "ML",
+                       weights = nlme::varIdent(form = ~ 1 | Year),
+                       data = phys[order(phys$Year),])
 
 car::leveneTest(residuals(cholmodP, type = "pearson"), interaction(phys$Year))
 
@@ -1354,10 +1356,10 @@ boxplot(residuals(cholmodP, type = "pearson") ~ interaction(phys$Year))
 summary(cholmodP)
 
 cholmodP0 <- nlme::lme( log(chol)~ 1, 
-                 random = ~1|DepID, 
-                 method = "ML",
-                 weights = nlme::varIdent(form = ~ 1 | Year),
-                 data = phys[order(phys$Year),])
+                        random = ~1|DepID, 
+                        method = "ML",
+                        weights = nlme::varIdent(form = ~ 1 | Year),
+                        data = phys[order(phys$Year),])
 
 options(na.action = "na.fail")
 aic_lmCHOLPe<-MuMIn::model.sel(cholmodP, cholmodP0)
@@ -1366,13 +1368,13 @@ aic_lmCHOLPe
 
 
 meancholmodP<-ggeffects::ggemmeans(model = cholmodP, 
-                                  terms = c('Year'),
-                                  ci.lvl = 0.95,
-                                  type = "fe",
-                                  typical = "mean",
-                                  condition = NULL,
-                                  back.transform = FALSE,
-                                  interval = "confidence")
+                                   terms = c('Year'),
+                                   ci.lvl = 0.95,
+                                   type = "fe",
+                                   typical = "mean",
+                                   condition = NULL,
+                                   back.transform = FALSE,
+                                   interval = "confidence")
 
 #plots 
 
@@ -1382,12 +1384,12 @@ cholPEBO<-ggplot(data= phys, aes(x=Year, y=log(chol), color = Year))+ #, color =
   scale_color_manual(values= c("#0072B2", "#00BFC4"))+
   #scale_color_manual(values= c("magenta4", "darkgreen"))+
   geom_pointrange(data=ggeffects::ggemmeans(model = cholmodP, 
-                                 terms = c('Year'),
-                                 ci.lvl = 0.95,
-                                 type = "fe",
-                                 typical = "mean",
-                                 back.transform = FALSE,
-                                 condition = NULL) ,
+                                            terms = c('Year'),
+                                            ci.lvl = 0.95,
+                                            type = "fe",
+                                            typical = "mean",
+                                            back.transform = FALSE,
+                                            condition = NULL) ,
                   aes(x = x, y = predicted, 
                       ymin = predicted-std.error, ymax = predicted+std.error, color = x))+
   xlab(NULL)+
@@ -1430,13 +1432,13 @@ aic_lmTriPe
 
 
 meantrimodP<-ggeffects::ggemmeans(model = trimodP, 
-                                   terms = c('Year'),
-                                   ci.lvl = 0.95,
-                                   type = "fe",
-                                   typical = "mean",
-                                   condition = NULL,
-                                   back.transform = FALSE,
-                                   interval = "confidence")
+                                  terms = c('Year'),
+                                  ci.lvl = 0.95,
+                                  type = "fe",
+                                  typical = "mean",
+                                  condition = NULL,
+                                  back.transform = FALSE,
+                                  interval = "confidence")
 
 #plots 
 #TIMETRIP YEAR AND SPECIES
@@ -1446,12 +1448,12 @@ triPEBO<-ggplot(data= phys, aes(x=Year, y=log(tri), color = Year))+ #, color = S
   scale_color_manual(values= c("#0072B2", "#00BFC4"))+
   #scale_color_manual(values= c("magenta4", "darkgreen"))+
   geom_pointrange(data=ggeffects::ggemmeans(model = trimodP, 
-                                 terms = c('Year'),
-                                 ci.lvl = 0.95,
-                                 type = "fe",
-                                 typical = "mean",
-                                 back.transform = FALSE,
-                                 condition = NULL) ,
+                                            terms = c('Year'),
+                                            ci.lvl = 0.95,
+                                            type = "fe",
+                                            typical = "mean",
+                                            back.transform = FALSE,
+                                            condition = NULL) ,
                   aes(x = x, y = predicted, 
                       ymin = predicted-std.error, ymax = predicted+std.error, color = x))+
   xlab(NULL)+
@@ -1486,10 +1488,10 @@ boxplot(resid(ketmodP) ~ interaction(phys$Year))
 summary(ketmodP)
 
 ketmodP <- nlme::lme( log(ket)~ Year, 
-                random = ~1|DepID, 
-                method = "REML",
-                weights = nlme::varIdent(form = ~ 1 | Year),
-                data = phys[order(phys$Year),])
+                      random = ~1|DepID, 
+                      method = "REML",
+                      weights = nlme::varIdent(form = ~ 1 | Year),
+                      data = phys[order(phys$Year),])
 car::leveneTest(residuals(ketmodP, type = "pearson"), interaction(phys$Year))
 boxplot(residuals(ketmodP, type = "pearson") ~ interaction(phys$Year))
 
@@ -1497,10 +1499,10 @@ boxplot(residuals(ketmodP, type = "pearson") ~ interaction(phys$Year))
 
 
 ketmodP0 <- nlme::lme( log(ket)~ 1, 
-                random = ~1|DepID, 
-                method = "REML",
-                weights = nlme::varIdent(form = ~ 1 | Year),
-                data = phys[order(phys$Year),])
+                       random = ~1|DepID, 
+                       method = "REML",
+                       weights = nlme::varIdent(form = ~ 1 | Year),
+                       data = phys[order(phys$Year),])
 
 
 options(na.action = "na.fail")
@@ -1509,13 +1511,13 @@ aic_lmKetPe<-MuMIn::model.sel(ketmodP, ketmodP0)
 aic_lmKetPe
 
 meanketmodP<-ggeffects::ggemmeans(model = ketmodP, 
-                                   terms = c('Year'),
-                                   ci.lvl = 0.95,
-                                   type = "fe",
-                                   typical = "mean",
-                                   condition = NULL,
-                                   back.transform = FALSE,
-                                   interval = "confidence")
+                                  terms = c('Year'),
+                                  ci.lvl = 0.95,
+                                  type = "fe",
+                                  typical = "mean",
+                                  condition = NULL,
+                                  back.transform = FALSE,
+                                  interval = "confidence")
 
 #plots 
 
@@ -1525,12 +1527,12 @@ ketPEBO<-ggplot(data= phys, aes(x=Year, y=log(ket), color = Year))+ #, color = S
   scale_color_manual(values= c("#0072B2", "#00BFC4"))+
   #scale_color_manual(values= c("magenta4", "darkgreen"))+
   geom_pointrange(data=ggeffects::ggemmeans(model = ketmodP, 
-                                 terms = c('Year'),
-                                 ci.lvl = 0.95,
-                                 type = "fe",
-                                 typical = "mean",
-                                 back.transform = FALSE,
-                                 condition = NULL) ,
+                                            terms = c('Year'),
+                                            ci.lvl = 0.95,
+                                            type = "fe",
+                                            typical = "mean",
+                                            back.transform = FALSE,
+                                            condition = NULL) ,
                   aes(x = x, y = predicted, 
                       ymin = predicted-std.error, ymax = predicted+std.error, color = x))+
   xlab(NULL)+
