@@ -1,44 +1,97 @@
 #model for physiology #with Allison's input
-library(lme4)
-install.packages("MuMIn", repos="https://r-forge.r-project.org/", type = "source")
-library(MuMIn)
-library(tidyverse)
-library(ggeffects)
-library(nlme)
-library(cowplot)
 
-theme_set(theme_light())
+#install.packages("MuMIn", repos="https://r-forge.r-project.org/", type = "source")
+#library(MuMIn)
+#library(tidyverse)
+#library(ggeffects)
+#library(nlme)
+#library(cowplot)
 
-# from SUMMARY_clean_TRIPS_FINAL
-#SUMMAGPS_1trip<-readRDS(file = "C:/Users/franc/OneDrive - McGill University/Documents/McGill/00Res Prop v2/Chap 2 - Tracks and overlap/SUMMAGPS_1tripFULL.RDS") #only 1 trip per bird
+ggplot2::theme_set(ggplot2::theme_light())
 
-#glmm_tests_post<-merge(SUMMAGPS, all_deps_post, by.x="dep_id", by.y="dp_ID", all=TRUE)
+{
+### Loading glmm_test for metrics and merge with deployment/nutrient data
 
-#uniques_1<-unique(SUMMAGPS_1trip$unique_trip)
-
-#glmm_Test_2spPOST1<-glmm_tests %>% 
- # filter(unique_trip %in% uniques_1)
+#original deployment csvs fused into 1 (2018, and 2019 gps, cams, and axxy)
+all_deps<-readRDS("data/all_deployments.phys.RDS")
 
 
-#ONLY WITH 1 last trip (not mean trips)
-#physiology and mean trip values
-glmm_Test_2spPOST1<-readRDS("C:/Users/francis van Oordt/OneDrive - McGill University/Documents/McGill/00Res Prop v2/Chap 2 - Tracks and overlap/glmm_post1PEBO.RDS")
+#glmm with clean trips, Sinuosity, and  PCA calculations already both species
+glmm_tests<-readRDS("data/glmm_testsPCAv2.RDS")
 
+
+
+#LMM model
+# Full model: log10_TotalTime ~ lo10_MaxDistColony-SCALED + logTOTAL PATH_SCALED + TORT + Spec + Year + Year*Spec + (individual)
+# maybe to incorporate sex into SUMMAGPS
+
+#merge trip summaries with Phys Sheet including sinuosity info a V1
+glmm_tests<-merge(glmm_tests, all_deps, by.x="ID", by.y="dp_ID", all=TRUE)
+
+### get julian date
+glmm_tests$julian <- format(glmm_tests$startt, "%j") 
+
+###
+glmm_tests <- glmm_tests |>
+  dplyr::filter(!is.na(Year)) |>
+  #dplyr::filter(!tottime >20)|>#excluding trip of one bird that was tracked for 9 days
+  dplyr::rename(dep_id =ID)|>
+  dplyr::mutate(
+    julian = as.numeric(julian),
+    Year=as.factor(Year),
+    Spec =as.factor(Spec),
+    TimeTrip =as.numeric(TimeTrip),
+    ID=as.factor(dep_id),
+    sex=as.factor(sex),
+    indx_TripD_MaxD =as.numeric(TimeTrip)/ maxdist,
+    log_ind = log(indx_TripD_MaxD),
+    log_Time = log(as.numeric(TimeTrip)),
+    log_MaxDist = log(maxdist),
+    log_TotDist = log(totdist),
+    latency = as.numeric(difftime(timeR, endt, units = "hours"))
+  ) 
+
+
+
+#glmm_tests|>
+ # dplyr::select(ID, latency)|>
+  #View()
+
+#glmm_tests|>
+ # View()
+a<-glmm_tests |>
+  dplyr::filter(Spec == "GUCO") |>
+  dplyr::group_by(dep_id) |> 
+  dplyr::filter(trip_id == min(trip_id)) #closest to sampling for GUCO
+
+b<-glmm_tests |>
+  dplyr::filter(Spec == "PEBO") |>
+  dplyr::group_by(dep_id) |> 
+  dplyr::filter(trip_id == max(trip_id)) #closest to sampling for PEBO
+
+SUMMAGPS_1trip<-rbind(a,b)
+}
+
+glmm_Test_2spPOST1<-SUMMAGPS_1trip
 #glucose
 #subset only complete dataset for a particular Metabolite
 
 # Since you only have 6 data points from 2018, I don't think you should fit 
+phystestsGLUP1 <- glmm_Test_2spPOST1 |> 
+  dplyr::select(glu ,tri , chol,  ket, PC1, sinuos, Spec, Year, latency, dep_id) |> 
+  dplyr::filter(!is.na(glu)) |> 
+  dplyr::filter(Spec == "PEBO")
 
-phystestsGLUP1 <- glmm_Test_2spPOST1 %>% 
-  dplyr::select(glu ,tri , chol,  ket, PC1, sinuos, Spec, Year, latency, dep_id) %>% 
-  filter(!is.na(glu)) %>% 
-  filter(Spec == "PEBO")
 
+ggplot2::ggplot(phystestsGLUP1, ggplot2::aes(y = log(glu), x =  log(sinuos), col = Year)) + 
+  ggplot2::geom_point()
 
-ggplot(phystestsGLUP1, aes(y = log(glu), x =  log(sinuos), col = Year)) + geom_point()
-ggplot(phystestsGLUP1, aes(y = log(glu), x =  PC1, col = Year)) + geom_point()
+ggplot2::ggplot(phystestsGLUP1, ggplot2::aes(y = log(glu), x =  PC1, col = Year)) + 
+  ggplot2::geom_point()
 
-ggplot(phystestsGLUP1, aes(y = log(glu), x =  Year, col = Year)) + geom_violin()+ geom_point()
+ggplot2::ggplot(phystestsGLUP1, ggplot2::aes(y = log(glu), x =  Year, col = Year)) + 
+  ggplot2::geom_violin()+ 
+  ggplot2::geom_point()
 
 
 # Because of the small sample size in 2018, I suggest a separate Welch's t-test for a year effect
@@ -46,14 +99,14 @@ ggplot(phystestsGLUP1, aes(y = log(glu), x =  Year, col = Year)) + geom_violin()
 t.test(log(phystestsGLUP1$glu) ~ phystestsGLUP1$Year)
 
 options(na.action = "na.omit")
-# Without year, you don't need to worry about unequal variance
-reg0 <- lm(log(glu) ~ 1, data = phystestsGLUP1)
-reg1 <- lm(log(glu) ~ log(sinuos), data = phystestsGLUP1)
-reg2 <- lm(log(glu) ~ PC1, data = phystestsGLUP1) ###############DELETED method= 'ML' in this and all subsequent models
-reg3 <- lm(log(glu) ~ PC1+log(sinuos) , data = phystestsGLUP1)
-reg4 <- lm(log(glu) ~ PC1*log(sinuos),  data = phystestsGLUP1)
-reg5 <- lm(log(glu) ~ PC1*log(latency),  data = phystestsGLUP1)
-reg6 <- lm(log(glu) ~ log(latency),  data = phystestsGLUP1)
+# Without year, you don't need to worry about unequal variance ###############DELETED method= 'ML' in this and all subsequent models
+reg0 <- lm(data = phystestsGLUP1, formula =log(glu) ~ 1)
+reg1 <- lm(data = phystestsGLUP1, formula =log(glu) ~ sinuos)
+reg2 <- lm(data = phystestsGLUP1, formula =log(glu) ~ PC1) 
+reg3 <- lm(data = phystestsGLUP1, formula =log(glu) ~ PC1+(sinuos) )
+reg4 <- lm(data = phystestsGLUP1, formula =log(glu) ~ PC1*(sinuos))
+reg5 <- lm(data = phystestsGLUP1, formula =log(glu) ~ PC1*log(latency))
+reg6 <- lm(data = phystestsGLUP1, formula =log(glu) ~ log(latency))
 
 options(na.action = "na.fail")
 aic_lmGluP<-MuMIn::model.sel(reg0, reg1, reg2, reg3, reg4, reg5, reg6)
@@ -64,145 +117,112 @@ summary(reg2)
 summary(reg1)
 summary(reg0)
 
-ggplot(phystestsGLUP1, aes(y = log(glu), x =  log(sinuos))) + geom_point()
-ggplot(phystestsGLUP1, aes(y = log(glu), x =  PC1)) + geom_point()
-ggplot(phystestsGLUP1, aes(y = log(glu), x =  Year, col = Year)) + geom_violin()+ geom_point()
+ggplot2::ggplot(phystestsGLUP1, ggplot2::aes(y = log(glu), x =  log(sinuos))) +
+  ggplot2::geom_point()
+ggplot2::ggplot(phystestsGLUP1, ggplot2::aes(y = log(glu), x =  PC1)) + 
+  ggplot2::geom_point()
 
+ggplot2::ggplot(phystestsGLUP1, ggplot2::aes(y = log(glu), x =  Year, col = Year)) + ggplot2::geom_violin()+
+  ggplot2::geom_point()
 
-#do I need to check for model fit and assumptions if the next best is the NULL with less than 2 dAIC??
-# It's probably a good idea to check that your other models aren't being really thrown off by something,
-# but you don't need to worry about it too much
 
 #write.csv(aic_lmGluP, "AIC.mean.gluPEBO.csv")
-#best model is .39 delta AIC from the null model
+#best model is 1.58 delta AIC from the null model
 
+#no save plot for GLU
 
 # ------
 #chol
 
-phystestsCHOLP1<-glmm_Test_2spPOST1 %>% 
-  select(glu ,tri , chol,  ket, PC1, sinuos, Spec, Year, latency, dep_id) %>% 
-  filter(!is.na(chol)) %>% 
-  filter(Spec == "PEBO")
+phystestsCHOLP1<-glmm_Test_2spPOST1 |> 
+  dplyr::select(glu ,tri , chol,  ket, PC1, sinuos, Spec, Year, latency, dep_id) |> 
+  dplyr::filter(!is.na(chol)) |> 
+  dplyr::filter(Spec == "PEBO")
 
-ggplot(phystestsCHOLP1, aes(y = log(chol), x =  log(sinuos), col = Year)) + geom_point()
-ggplot(phystestsCHOLP1, aes(y = log(chol), x =  PC1, col = Year)) + geom_point()
-ggplot(phystestsCHOLP1, aes(y = log(chol), x =  Year, col = Year)) + geom_violin()+ geom_point()
+ggplot2::ggplot(phystestsCHOLP1, ggplot2::aes(y = log(chol), x =  log(sinuos), col = Year)) + ggplot2::geom_point()
+ggplot2::ggplot(phystestsCHOLP1, ggplot2::aes(y = log(chol), x =  PC1, col = Year)) + ggplot2::geom_point()
+ggplot2::ggplot(phystestsCHOLP1, ggplot2::aes(y = log(chol), x =  Year, col = Year)) + ggplot2::geom_violin()+ ggplot2::geom_point()
 
 # Same here - check for year effect before fitting models without year
 t.test(log(phystestsCHOLP1$chol) ~ phystestsCHOLP1$Year)
 
-phystestsCHOLP1<-glmm_Test_2spPOST1 %>% 
-  select(glu ,tri , chol,  ket, PC1, sinuos, Spec, Year, latency, dep_id) %>% 
-  filter(!is.na(chol)) %>% 
-  filter(Spec == "PEBO") #%>% 
+phystestsCHOLP1<-glmm_Test_2spPOST1 |> 
+  dplyr::select(glu ,tri , chol,  ket, PC1, sinuos, Spec, Year, latency, dep_id) |> 
+  dplyr::filter(!is.na(chol)) |> 
+  dplyr::filter(Spec == "PEBO") #|> 
   #filter(Year == "2019")
 
 options(na.action = "na.omit")
 
 reg0 <- lm(data = phystestsCHOLP1, formula =  log(chol) ~  1)
-reg1 <- lm(data = phystestsCHOLP1, formula =  log(chol) ~ log(sinuos))
+reg1 <- lm(data = phystestsCHOLP1, formula =  log(chol) ~ (sinuos))
 reg2 <- lm(data = phystestsCHOLP1, formula =  log(chol) ~ PC1)
-reg3 <- lm(data = phystestsCHOLP1, formula =  log(chol) ~ PC1+log(sinuos) )
-reg4 <- lm(data = phystestsCHOLP1, formula =  log(chol) ~ PC1*log(sinuos))
+reg3 <- lm(data = phystestsCHOLP1, formula =  log(chol) ~ PC1+(sinuos) )
+reg4 <- lm(data = phystestsCHOLP1, formula =  log(chol) ~ PC1*(sinuos))
 reg5 <- lm(data = phystestsCHOLP1, formula = log(chol) ~ PC1*log(latency))
 reg6 <- lm(data = phystestsCHOLP1, formula = log(chol) ~ log(latency))
 
 #options(na.action = "na.fail")
 aic_lmCholP<-MuMIn::model.sel(reg0, reg1, reg2, reg3, reg4, reg5, reg6)
 aic_lmCholP
+aic_lmCholP_df<- as.data.frame(aic_lmCholP)
+aic_lmCholP_df$model <- "aic_lmCholP" 
+#write.csv(aic_lmCholP_df, "data/AIC.1trip.cholPEBOv2.csv")
 
-#write.csv(aic_lmCholP, "AIC.mean.cholPEBO.csv")
+ggplot2::ggplot(phystestsCHOLP1, ggplot2::aes(y = log(chol), x =  log(sinuos))) + ggplot2::geom_point()
+ggplot2::ggplot(phystestsCHOLP1, ggplot2::aes(y = log(chol), x =  PC1)) + ggplot2::geom_point()
 
-ggplot(phystestsCHOLP1, aes(y = log(chol), x =  log(sinuos))) + geom_point()
-ggplot(phystestsCHOLP1, aes(y = log(chol), x =  PC1)) + geom_point()
-
-summary(reg4)
-summary(reg2)
 opar <- par(mfrow = c(2,2), oma = c(0, 0, 1.1, 0))
 plot(reg1)
 par(opar)
 hist(resid(reg1))
+par(opar)
 
-
-meanModPEBOchol1trip<-ggpredict(
-  reg4,
+meanModPEBOchol1trip<-ggeffects::ggpredict(
+  reg1,
   terms = c("sinuos"),
-  ci.lvl = 0.95,
+  ci_lvl = 0.95,
   type = "fe",
-  back.transform= FALSE, 
+  back_transform= FALSE, 
   typical = "mean"
 )
 
-PEBOchol1trip <- ggplot()+
-  geom_smooth(data=ggpredict(
-    reg4,
-    terms = c("sinuos"),
-    ci.lvl = 0.95,
-    type = "fe",
-    back.transform= FALSE, 
-    typical = "mean"
-  ),
-  aes(x = (x), y = (predicted), color = group),
-  method = "lm"
-  )+
-  xlab("Sinuosity (log)")+
-  ylab("Cholesterol (log)")+
-  #labs(title = "Foraging Effort in Guano Seabirds")+
-  theme_bw()
+PEBOchol1trip<-plot(meanModPEBOchol1trip, show_data = TRUE)+
+  ggplot2::xlab("Sinuosity (log)")+
+  ggplot2::ylab("Log-Cholesterol (mg/dL)")+
+  ggplot2::ggtitle(NULL)
 
-meanModPEBOchol1tripPC1<-ggpredict(
-  reg4,
-  terms = c("PC1"),
-  ci.lvl = 0.95,
-  type = "fe",
-  back.transform= FALSE, 
-  typical = "mean"
-)
 
-PEBOchol1tripPC1 <- ggplot()+
-  geom_smooth(data=ggpredict(
-    reg4,
-    terms = c("PC1"),
-    ci.lvl = 0.95,
-    type = "fe",
-    back.transform= FALSE, 
-    typical = "mean"
-  ),
-  aes(x = (x), y = (predicted), color = group),
-  method = "lm"
-  )+
-  xlab("PC1")+
-  ylab("Cholesterol (log)")+
-  #labs(title = "Foraging Effort in Guano Seabirds")+
-  theme_bw()
+
+
+
 
 #trig
-phystestsTRIP1<-glmm_Test_2spPOST1 %>% 
-  select(glu ,tri , chol,  ket, PC1, sinuos, Spec, Year, latency, dep_id) %>% 
-  filter(!is.na(tri)) %>% 
-  filter(Spec == "PEBO")
-ggplot(phystestsTRIP1, aes(y = log(tri), x =  log(sinuos), col = Year)) + geom_point()
-ggplot(phystestsTRIP1, aes(y = log(tri), x =  PC1, col = Year)) + geom_point()
-ggplot(phystestsTRIP1, aes(y = log(tri), x =  Year, col = Year)) + geom_violin()+ geom_point()
+phystestsTRIP1<-glmm_Test_2spPOST1 |> 
+  dplyr::select(glu ,tri , chol,  ket, PC1, sinuos, Spec, Year, latency, dep_id) |> 
+  dplyr::filter(!is.na(tri)) |> 
+  dplyr::filter(Spec == "PEBO")
+ggplot2::ggplot(phystestsTRIP1,  ggplot2::aes(y = log(tri), x =  (sinuos), col = Year)) +  ggplot2::geom_point()
+ggplot2::ggplot(phystestsTRIP1,  ggplot2::aes(y = log(tri), x =  PC1, col = Year)) +  ggplot2::geom_point()
+ggplot2::ggplot(phystestsTRIP1,  ggplot2::aes(y = log(tri), x =  Year, col = Year)) +  ggplot2::geom_violin()+  ggplot2::geom_point()
 
 
 t.test(log(phystestsTRIP1$tri) ~ phystestsTRIP1$Year)
 
-phystestsTRIP1<-glmm_Test_2spPOST1 %>% 
-  select(glu ,tri , chol,  ket, PC1, sinuos, Spec, Year, latency, dep_id) %>% 
-  filter(!is.na(tri)) %>% 
-  filter(Spec == "PEBO") %>% 
-  filter(latency < 20) # done with removing and not removing outlier in latency, basically same results
+phystestsTRIP1<-glmm_Test_2spPOST1 |> 
+  dplyr:: select(glu ,tri , chol,  ket, PC1, sinuos, Spec, Year, latency, dep_id) |> 
+  dplyr::filter(!is.na(tri)) |> 
+  dplyr::filter(Spec == "PEBO") |> 
+  dplyr:: filter(latency < 20) # done removing and not removing outlier in latency, basically same results
 
 
 options(na.action = "na.omit")
 reg0 <- lm(data = phystestsTRIP1, formula =  log(tri) ~  1)
-reg1 <- lm(data = phystestsTRIP1, formula =  log(tri) ~ log(sinuos))
+reg1 <- lm(data = phystestsTRIP1, formula =  log(tri) ~ (sinuos))
 reg2 <- lm(data = phystestsTRIP1, formula =  log(tri) ~ PC1)
-reg3 <- lm(data = phystestsTRIP1, formula =  log(tri) ~ PC1+log(sinuos) )
-reg4 <- lm(data = phystestsTRIP1, formula =  log(tri) ~  PC1*log(sinuos) )
-reg5 <- lm(data = phystestsTRIP1, log(tri) ~ PC1*log(latency))
+reg3 <- lm(data = phystestsTRIP1, formula =  log(tri) ~ PC1 + (sinuos) )
+reg4 <- lm(data = phystestsTRIP1, formula =  log(tri) ~  PC1 * (sinuos) )
+reg5 <- lm(data = phystestsTRIP1, log(tri) ~ PC1 * log(latency))
 reg6 <- lm(data = phystestsTRIP1, log(tri) ~ log(latency))
 
 options(na.action = "na.fail")
@@ -211,94 +231,61 @@ aic_lmTriP1<-MuMIn::model.sel(reg0,reg1, reg2, reg3, reg4, reg5, reg6)
 aic_lmTriP1
 
 
-#save aic table for PC1 effort year spec and sinous
-aic_lmTriP1.df <- as.data.frame(aic_lmTriP1)
+aic_lmTriP1_df<- as.data.frame(aic_lmTriP1)
+aic_lmTriP1_df$model<-"aic_lmTriP1"
+#write.csv(aic_lmTriP1_df, "data/AIC.1trip.triPEBOv2.csv")
+summary(reg6)
 
-aic_lmTriP1.df$model<-"aic_lmTriP1"
-
-#write.csv(aic_lmTriP1.df, "aic_lmTriP1.df.csv")
-
-ggplot(phystestsTRIP1, aes(y = log(tri), x = latency)) + geom_point()
-
-
-meanModPEBOtri1trip<-ggpredict(
+meanModPEBOtri1trip<-ggeffects::ggpredict(
   reg6,
   terms = c("latency"),
-  ci.lvl = 0.95,
+  ci_lvl = 0.95,
   type = "fe",
-  back.transform= FALSE, 
+  back_transform= FALSE, 
   typical = "mean"
 )
 
-
-PEBOtri1trip <- ggplot()+
-  geom_smooth(data=ggpredict(
-    reg6,
-    terms = c("latency"),
-    ci.lvl = 0.95,
-    type = "fe",
-    back.transform= FALSE, 
-    typical = "mean"
-  ),
-  aes(x = (x), y = (predicted)),
-  method = "lm"
-  )+
-  xlab("Latency (log)")+
-  ylab("Triglycerides (log)")+
-  #labs(title = "Foraging Effort in Guano Seabirds")+
-  theme_bw()
-PEBOtri1trip
-
-
-PEBOtri1tripA <- ggplot()+
-  geom_point(data= phystestsTRIP1, aes(x=latency, y=log(tri)), alpha = 0.3)+
-  geom_smooth(data=ggpredict(
-    reg6,
-    terms = c("latency"),
-    ci.lvl = 0.95,
-    type = "fe",
-    back.transform= FALSE, 
-    interval = "confidence",
-    typical = "mean"
-  ),
-  aes(x = (x), y = (predicted)),
-  method = "lm"
-  )+
-  xlab("Latency (log)")+
-  ylab("Triglycerides (log)")+
-  #labs(title = "Foraging Effort in Guano Seabirds")+
-  theme_bw()
-
-
-PEBOtri1tripA
-
-
+PEBOtri1tripA <-plot(meanModPEBOtri1trip, show_data = TRUE)+
+  ggplot2::xlab("Latency (log)")+
+  ggplot2::ylab("Log-Triglycerides (mg/dL)")+
+  ggplot2::ggtitle(NULL)+
+  ggplot2::scale_x_continuous(#breaks = 3:5, 
+    limits = c(3, 20))
+  
 
 
 ###KETONES
-phystestsKETP1<-glmm_Test_2spPOST1 %>% 
-  select(glu ,tri , chol,  ket, PC1, sinuos, Spec, Year, latency, dep_id) %>% 
-  filter(!is.na(ket)) %>% 
-  filter(Spec == "PEBO")
+phystestsKETP1<-glmm_Test_2spPOST1 |> 
+  dplyr::select(glu ,tri , chol,  ket, PC1, sinuos, Spec, Year, latency, dep_id) |> 
+  dplyr::filter(!is.na(ket)) |> 
+  dplyr::filter(Spec == "PEBO")
 
 t.test(log(phystestsKETP1$ket) ~ phystestsKETP1$Year)
 
-phystestsKETP1<-glmm_Test_2spPOST1 %>% 
-  select(glu ,tri , chol,  ket, PC1, sinuos, Spec, Year, latency, dep_id) %>% 
-  filter(!is.na(ket)) %>% 
-  filter(Spec == "PEBO") %>% 
-  filter(Year =="2019")
+phystestsKETP1<-glmm_Test_2spPOST1 |> 
+  dplyr::select(glu ,tri , chol,  ket, PC1, sinuos, Spec, Year, latency, dep_id) |> 
+  dplyr::filter(!is.na(ket)) |> 
+  dplyr::filter(Spec == "PEBO") |> 
+  dplyr::filter(Year =="2019")
 
 options(na.action = "na.omit")
 reg0 <- lm(data = phystestsKETP1, formula =  log(ket) ~  1)
-reg1 <- lm(data = phystestsKETP1, formula =  log(ket) ~ log(sinuos))
+reg1 <- lm(data = phystestsKETP1, formula =  log(ket) ~ (sinuos))
 reg2 <- lm(data = phystestsKETP1, formula =  log(ket) ~ PC1)
-reg3 <- lm(data = phystestsKETP1, formula =  log(ket) ~ log(sinuos) + PC1)
-reg4 <- lm(data = phystestsKETP1, formula =  log(ket) ~ log(sinuos) * PC1)
+reg3 <- lm(data = phystestsKETP1, formula =  log(ket) ~ (sinuos) + PC1)
+reg4 <- lm(data = phystestsKETP1, formula =  log(ket) ~ (sinuos) * PC1)
 reg5 <- lm(data = phystestsKETP1, log(ket) ~ PC1 * log(latency))
 reg6 <- lm(data = phystestsKETP1, log(ket) ~ log(latency))
 
 #options(na.action = "na.fail")
 aic_lmKetP1<-MuMIn::model.sel(reg0, reg1, reg2, reg3, reg4, reg5, reg6)
 aic_lmKetP1
+#null within 2 delta aic
 
+# no save model
+
+#save two nutrient with rels
+phys_effotr_plots <- cowplot::plot_grid(PEBOchol1trip, PEBOtri1tripA, nrow = 1, labels = c("A", "B"))
+ggplot2::ggsave(phys_effotr_plots, filename = "plots/phys_effort_plotsv2.png", width = 10, height = 5, units = "in", dpi = 300, bg ="white")
+
+## save predictions for paper????
