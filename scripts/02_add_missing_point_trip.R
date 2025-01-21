@@ -1,6 +1,14 @@
-#add points to trip that is missing data at the end
-#specially for 1-trip models
+#Script that add points to trip that is missing data at the end of trips
+# incorporated the addition to 1 mid-trip at the beggining of the trip
+# for interpolation
+# this was done initially for specially for 1-trip models
+# re run 2024-Nov to interpolate all track to 1 min
+
+
 library(dplyr)
+###############################################
+###############################################
+# 1. First chunk add points to end of trips
 
 ######################ATTEMP to model gaps in ending trips
 
@@ -14,7 +22,7 @@ gps.data<-readRDS(file="C:/Users/franc/OneDrive - McGill University/Documents/Mc
 
 
 #fixed!!!!!!!!!!!!!!!
-gps.data<-readRDS("C:/Users/franc/OneDrive - McGill University/Documents/McGill/Field data/gps_data_seabiRdsFIXED.RDS")
+gps.data<-readRDS("data/gps_data_seabiRdsFIXED.RDS")
 
 
 
@@ -167,7 +175,7 @@ A$time<-as.POSIXct(A$time, format="%m/%d/%Y %H:%M",  tz="UTC")#, tz="America/Lim
 gps.data<-readRDS(file="C:/Users/franc/OneDrive - McGill University/Documents/McGill/Field data/gps_data_seabiRds.RDS")
 
 
-dep_dataPeru<-readRDS("C:/Users/franc/OneDrive - McGill University/Documents/McGill/Field data/dep_dataPeru_seabiRds.RDS")
+dep_dataPeru<-readRDS("data/dep_dataPeru_seabiRds.RDS")
 
 gps.data<-rbind(gps.data,A)
 
@@ -182,3 +190,64 @@ gps.data <- cleanGPSData(data = gps.data,
 #saveRDS(gps.data,"C:/Users/franc/OneDrive - McGill University/Documents/McGill/Field data/gps_data_seabiRdsFIXED.RDS")
 
 #View(head(gps.data[which(gps.data$dep_id == D$dep_id[4] & gps.data$time >= D$time[4]),],3))
+
+###############################################
+###############################################
+# 2. Add one point to a middle trip, to not miss it
+################ for G04PEBO_37_20191119
+
+
+gps.data<-readRDS("data/gps_data_seabiRdsFIXED.RDS")
+
+onebird<-gps.data|>
+  dplyr::filter(dep_id == "G04PEBO_37_20191119")|>
+  as.data.frame()
+
+summary(onebird$dt)
+onebird[which(onebird$dt > 5),]
+
+onebird[5400:5415, ]
+
+to_add<- onebird[5408:5409,]
+
+write.csv(to_add, "data/to_add_PEBOG04.csv", row.names = FALSE)
+
+
+A<-read.csv("data/to_add_PEBOG04.csv") # I kept the old line
+A<-A[-2,]
+A$time<-as.POSIXct(A$time, format="%m/%d/%Y %H:%M",  tz="UTC")#, tz="America/Lima"
+
+onebird <-rbind(onebird, A)
+onebird<-onebird[order(onebird$time),]
+
+gps.data<-readRDS("data/gps_data_seabiRdsFIXED.RDS")
+
+gps.data<-gps.data|>
+  dplyr::filter(!dep_id == "G04PEBO_37_20191119")|>
+  rbind(onebird)
+
+gps.data<-as.data.frame(gps.data)
+
+class(gps.data$time)
+summary(gps.data)
+class(dep_dataPeru$time_released)
+class(dep_dataPeru$time_recaptured)
+summary(dep_dataPeru)
+
+gps.data <- seabiRds::cleanGPSData(data = gps.data,
+                         deployments = dep_dataPeru,
+                         speedThreshold = 110,
+                         plot = FALSE)
+
+#check how the point looks
+onebird<-gps.data|>
+  dplyr::filter(dep_id == "G04PEBO_37_20191119")
+
+# plot the added point zooming into 
+plot(onebird$time[which(onebird$time > "2019-11-16 00:42:04 UTC" &
+                          onebird$time < "2019-11-17 15:01:04 UTC"
+                          )], onebird$coldist[which(onebird$time > "2019-11-16 00:42:04 UTC" &
+                                                      onebird$time < "2019-11-17 15:01:04 UTC"
+                          )])
+
+saveRDS(gps.data, "data/gps_data_seabiRdsFIXEDv2.RDS")
