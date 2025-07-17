@@ -18,7 +18,7 @@
 all_deps<-readRDS("data/all_deployments.phys.RDS")
 
 #glmm with clean trips, Sinuosity, and  PCA calculations already both species
-glmm_tests<-readRDS("data/glmm_testsPCAv2.RDS")
+glmm_tests<-readRDS("data/glmm_testsPCAv3.RDS")
 
 #LMM model
 # Full model: log10_TotalTime ~ lo10_MaxDistColony-SCALED + logTOTAL PATH_SCALED + TORT + Spec + Year + Year*Spec + (individual)
@@ -30,13 +30,14 @@ glmm_tests<-merge(glmm_tests, all_deps, by.x="ID", by.y="dp_ID", all=TRUE)
 ### get julian date
 glmm_tests$julian <- format(glmm_tests$startt, "%j") 
 
-###
+###July 16th fixed issue with division of maxdist by 1000 and totdist is good now (before was in meters)
+#changed
 glmm_tests <- glmm_tests |>
   dplyr::filter(!is.na(Year)) |>
   #dplyr::filter(!tottime >20)|>#excluding trip of one bird that was tracked for 9 days
   dplyr::rename(dep_id =ID)|>
   dplyr::mutate(
-    maxdist = maxdist/1000,
+    maxdist = maxdist,
     julian = as.numeric(julian),
     Year=as.factor(Year),
     Spec =as.factor(Spec),
@@ -79,7 +80,7 @@ glmm_tests|>
   dplyr::group_by(ID, Day, Year, Spec)|>
   dplyr::summarise(
     total_Trip = sum(tottime),
-    tota_trav = sum (totdist)/1000
+    tota_trav = sum (totdist)
   )|>
   dplyr::ungroup()|>
   dplyr::group_by(Year, Spec)|>
@@ -89,6 +90,7 @@ glmm_tests|>
   )
 
 #per trip mean metrics per species and year
+# changing in July 16th, as no need to divide totdist by 1000
 sum_table_4metrics<-glmm_tests|>
  
   dplyr::group_by(Year, Spec)|>
@@ -98,10 +100,10 @@ sum_table_4metrics<-glmm_tests|>
     minAway = min(tottime, na.rm = TRUE),
     maxAway = max(tottime, na.rm = TRUE),
     
-    meanDist = mean(totdist/1000),
-    SEmeanDist = (sd(totdist/1000))/sqrt(dplyr::n()),
-    minDist = min(totdist/1000, na.rm = TRUE),
-    maxDist = max(totdist/1000, na.rm = TRUE),
+    meanDist = mean(totdist),
+    SEmeanDist = (sd(totdist))/sqrt(dplyr::n()),
+    minDist = min(totdist, na.rm = TRUE),
+    maxDist = max(totdist, na.rm = TRUE),
     
     meanMax = mean(maxdist),
     SEmeanMax = sd(maxdist)/sqrt(dplyr::n()), 
@@ -111,37 +113,91 @@ sum_table_4metrics<-glmm_tests|>
     meanSin = mean(sinuos/1000),
     SEmeanSin = sd(sinuos/1000)/sqrt(dplyr::n()),
     minSin = min(sinuos, na.rm = TRUE),
-    maxSin = max(sinuos, na.rm = TRUE)
+    maxSin = max(sinuos, na.rm = TRUE),
+    n = dplyr::n()
+    
   )
-write.csv(sum_table_4metrics, "data/sum_table_4metrics.csv")
+#write.csv(sum_table_4metrics, "data/sum_table_4metrics_nv2.csv")
 #per trip mean metrics per species and year, independently
 #YEAR
+#fixing the div by 1000 (now deleted)
 glmm_tests|>
   dplyr::group_by(Year)|>
   dplyr::summarise(
     meanAway = mean(tottime),
     SEmeanAway =  sd(tottime)/sqrt(dplyr::n()),
-    meanDist = mean(totdist/1000),
-    SEmeanDist = (sd(totdist/1000))/sqrt(dplyr::n()),
+    meanDist = mean(totdist),
+    SEmeanDist = (sd(totdist))/sqrt(dplyr::n()),
     meanMax = mean(maxdist),
     SEmeanMax = sd(maxdist)/sqrt(dplyr::n()), 
-    meanSpeed = mean(MaxSpeed/1000),
-    SEmeanSpeed = sd(MaxSpeed/1000)/sqrt(dplyr::n())
+    meanSpeed = mean(MaxSpeed),
+    SEmeanSpeed = sd(MaxSpeed)/sqrt(dplyr::n())
     )
 #Species
-sample_means <-glmm_tests|>
+glmm_tests|>
   dplyr::group_by(Spec)|>
   dplyr::summarise(
     meanAway = mean(tottime),
     SEmeanAway =  sd(tottime)/sqrt(dplyr::n()),
-    meanDist = mean(totdist/1000),
-    SEmeanDist = (sd(totdist/1000))/sqrt(dplyr::n()),
+    meanDist = mean(totdist),
+    SEmeanDist = (sd(totdist))/sqrt(dplyr::n()),
     meanMax = mean(maxdist),
     SEmeanMax = sd(maxdist)/sqrt(dplyr::n()), 
-    meanSpeed = mean(MaxSpeed/1000),
-    SEmeanSpeed = sd(MaxSpeed/1000)/sqrt(dplyr::n())
+    meanSpeed = mean(MaxSpeed),
+    SEmeanSpeed = sd(MaxSpeed)/sqrt(dplyr::n())
   )
-write.csv(sample_means , "data/sample_means .csv")
+#write.csv(sample_means , "data/sample_means .csv")
+
+# summary table for all mebtabolites
+data_vals<-all_deps |>
+  dplyr::filter(SP !="RLCO")|>
+  dplyr::mutate(
+    Year = lubridate::year(timeC)
+  )|>
+ dplyr::select(sp=SP,year=Year, chol, glu, ket, tri)
+
+df_bind <-NULL
+for (i in unique(data_vals$year)) {
+  
+  subseted_df<-data_vals[data_vals$year == i,]
+  for (h in unique(data_vals$sp)) {
+    
+    subseted_sp<-subseted_df[subseted_df$sp == h,]
+    
+    for (j in 3:6) {
+      one_var<-subseted_sp[j]
+      
+      mean_val <- round(mean(one_var[,1], na.rm = TRUE), 3)
+      se_val <- round(
+        sd(one_var[,1], na.rm= TRUE)
+        /sqrt(length(!is.na( one_var[,1] ) ) ), 3)
+      min_val <- round(min(one_var[,1], na.rm = TRUE), 3)
+      max_val <- round(max(one_var[,1], na.rm = TRUE), 3)
+      sample_size <- length(
+        one_var[complete.cases( one_var[,1] ), ] 
+      ) 
+      df_bind <- rbind(df_bind, c(i, h,names(data_vals[j]), 
+                                  mean_val, se_val,min_val, max_val, sample_size  ))
+      
+      
+    }
+  }
+  
+}
+colnames(df_bind)<-c("Year", "Species", "metab" , "mean", "se","min","max", "n")
+df_bind<-as.data.frame(df_bind)
+#write.csv(df_bind, "data/summary_metabolitesx4.csv")
+
+#get masses for GUCO
+
+all_deps|>
+  dplyr::filter(SP =="GUCO")|>
+  dplyr::mutate(
+    Year = lubridate::year(timeC)
+  )|>
+  dplyr::select(Year, mass)|>
+  dplyr::group_by(Year)|>
+  dplyr::summarise(Mass = mean(mass, na.rm = TRUE))
 
 #check relationships of increased parameters in time pass by (days) totdist, TimeTrip, maxdist, sinous
 plot<- ggpubr::ggscatter(glmm_tests, y = "TimeTrip", x = "julian",
@@ -156,8 +212,12 @@ plot<- ggpubr::ggscatter(glmm_tests, y = "TimeTrip", x = "julian",
 ggpubr::facet(plot, facet.by = "Year", scales = "free")
 
 ###################################################################################
+###################################################################################
 #models with covariate and fixed effects, fixed slopes
 # latest version, all models with nlme::lme
+
+#fix on July 16th
+#maxdist and totdist had units issues
 
 
 #TOTAL TRIP DURATION time trip
@@ -246,7 +306,7 @@ A2<-ggplot2::ggplot(data= glmm_tests,ggplot2::aes(x=Year, y=log(TimeTrip), color
                                                                 jitter.width = 0.3
                        ),
                        alpha = 0.3)+
-  ggplot2::geom_pointrange(data=TripDurBmeans,
+  ggplot2::geom_pointrange(data=TripDurBmeans,cex = 0.25,
                            ggplot2::aes(x = x, y = predicted, 
                                         ymin = predicted-std.error, ymax = predicted+std.error,
                                         color = x) )+
@@ -339,7 +399,7 @@ B2<-ggplot2::ggplot(data= glmm_tests,ggplot2::aes(x=Spec, y=log(totdist), color 
   # ggplot2::scale_colour_manual(values = c("#F8766D",  "#00BFC4"))+
   
   #ggnewscale::new_scale_color()+
-  ggplot2::geom_pointrange(data=TripPathBmeans,
+  ggplot2::geom_pointrange(data=TripPathBmeans,cex = 0.25,
                            ggplot2::aes(x = x, y = predicted, 
                                         ymin = predicted-std.error, ymax = predicted+std.error,
                                         color = x) )+
@@ -420,13 +480,7 @@ C2<-
                                                                jitter.width = 0.3
                       ),
                       alpha = 0.3)+
-  ggplot2::geom_pointrange(data=ggeffects::ggemmeans(model = glmm_MaxDistB, 
-                                                     terms = c('Spec'),
-                                                     ci_lvl = 0.95,
-                                                     type = "fe",
-                                                     typical = "mean",
-                                                     condition = NULL,
-                                                     back_transform = FALSE) ,
+  ggplot2::geom_pointrange(data=MaxDistB ,cex = 0.25,
                            ggplot2::aes(x = x, y = predicted, 
                                         ymin = predicted-std.error, ymax = predicted+std.error, color = x))+
   ggplot2::xlab(NULL)+
@@ -494,24 +548,17 @@ sinmeans<-ggeffects::ggemmeans(model = glmm_sin,
 
 
 ##
-D2 <- ggplot2::ggplot(data= glmm_tests, ggplot2::aes(x=Year, y=log(sinuos), color = Spec))+ #, linetype = Year
-  ggplot2::geom_point(position = ggplot2::position_jitterdodge(
+D2 <- ggplot2::ggplot(data= glmm_tests)+ #, linetype = Year
+  ggplot2::geom_point(ggplot2::aes(x=Year, y=log(sinuos), color = Spec),position = ggplot2::position_jitterdodge(
     dodge.width = 0.3, 
     jitter.height = 0, 
     jitter.width = 0.3),
-             alpha = 0.3)+
-  ggplot2::geom_pointrange(data=ggeffects::ggemmeans(model = glmm_sin, 
-                                            terms = c('Year', 'Spec'),
-                                            ci_lvl = 0.95,
-                                            type = "fe",
-                                            typical = "mean",
-                                            condition = NULL,
-                                            back_transform = FALSE,
-                                            interval = "confidence") ,
-                  ggplot2::aes(x = x, y = predicted, 
-                      ymin = predicted-std.error, ymax = predicted+std.error,
-                      color = group), 
-                  position = ggplot2::position_jitterdodge(dodge.width = 0.3, jitter.height = 0, jitter.width = 0.1) )+#,, linetype = facet
+    alpha = 0.3)+
+  ggplot2::geom_pointrange(data=sinmeans ,cex = 0.25,
+                           ggplot2::aes(x = group, y = predicted, 
+                                        ymin = predicted-std.error, ymax = predicted+std.error,
+                                        color = x), 
+                           position = ggplot2::position_jitterdodge(dodge.width = 0.3, jitter.height = 0, jitter.width = 0.1) )+#,, linetype = facet
   #method = "lm"
   
   ggplot2::xlab(NULL)+
@@ -519,13 +566,16 @@ D2 <- ggplot2::ggplot(data= glmm_tests, ggplot2::aes(x=Year, y=log(sinuos), colo
   ggplot2::guides(color = "none")+
   #labs(title = "Foraging Effort in Guano Seabirds")+
   ggplot2::theme_bw()
+
 D2
+
+
 
 pcol2<-cowplot::plot_grid(A2, B2, C2, D2, labels = c('A', 'B', 'C', 'D'), ncol = 2)
 
-ggplot2::ggsave("plots/for_effort_metricsv3splits.png", pcol2, dpi = 300, bg = "white", units = 'in', width = 10.5, height = 7)
+#ggplot2::ggsave("plots/for_effort_metricsv6splits.png", pcol2, dpi = 300, bg = "white", units = 'in', width = 9.5, height = 7.5)
 
-
+# compile all models
 mod1<- as.data.frame(aic_TripDur)
 mod2<-as.data.frame(aic_TripPath)
 mod3<-as.data.frame(aic_MaxDist)
@@ -537,9 +587,9 @@ mod3$model<-"aic_MaxDist"
 mod4$model<-"aic_sin"
 
 all_mods<-rbind(mod1, mod2, mod3, mod4)
-write.csv(all_mods, "data/all_modelsAICv2.csv")
+#write.csv(all_mods, "data/all_modelsAICv2.csv")
 
-
+#compile all predicted mean values
 means1<-as.data.frame(TripDurBmeans)
 means2<-as.data.frame(TripPathBmeans)
 means3<-as.data.frame(MaxDistB)
