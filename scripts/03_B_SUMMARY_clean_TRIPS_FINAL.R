@@ -63,11 +63,9 @@ gps.data <- gps.data.int |>
 
 #######################################
 #######################################
-# LOAD Fixed2 with metrics 1km
+# GPS data is hmmDatav4Joint.RDS for interpolated fixed data
 #######################################
 
-#gps.data<-readRDS("data/gps_data_seabiRdsFIXED2_metrics.RDS")
-#gps.data<-readRDS("data/gps_data_seabiRdsFIXED2_metrics5km.RDS")
 
 #summarise trips without discarding specific trips, at 1km of colony
 SUMMAGPS <- gps.data |>
@@ -79,7 +77,7 @@ SUMMAGPS <- gps.data |>
     Day = max(day), #day of the trip
     maxdist = max(coldist2)/1000, #max distance to the colony
     tottime = dplyr::n()/60, #sum(dt, na.rm = TRUE), #total time traveled (beware its a SUM of dif times between steps)
-    totdist = sum(step, na.rm = TRUE), # total distance traveled (beware distance between steps)
+    totdist = sum(step, na.rm = TRUE)/1000, # total distance traveled (beware distance between steps)
     startt = min(time), #start of the trip
     endt = max(time),
     sampRTime= mean( dplyr::n(), na.rm=TRUE),
@@ -152,7 +150,7 @@ dplyr::filter(ID == "C14PEBO_20191121_A161_S1")|>
     Day = max(day), #day of the trip
     maxdist = max(coldist2)/1000, #max distance to the colony
     tottime = dplyr::n()/60, #sum(dt, na.rm = TRUE), #total time traveled (beware its a SUM of dif times between steps)
-    totdist = sum(step, na.rm = TRUE), # total distance traveled (beware distance between steps)
+    totdist = sum(step, na.rm = TRUE)/1000, # total distance traveled (beware distance between steps)
     startt = min(time), #start of the trip
     endt = max(time),
     sampRTime= mean( dplyr::n(), na.rm=TRUE),
@@ -204,7 +202,10 @@ View(cleanning)
 
 gps.data_clean<-rbind(gps.data_clean, cleanning)
 
-saveRDS(gps.data_clean, "data/gps.data_clean_INT.RDS")
+
+
+saveRDS(gps.data_clean, "data/gps.data_clean_INT.RDS") # last save just in case after totdist fix (was in meters, now all is kms) July 16th 2025
+
 
 ##################################################
 # remove the 1 trip in SUMMAGPS for the one bird
@@ -236,7 +237,8 @@ SUMMAGPS_clean <- SUMMAGPS_clean[which(SUMMAGPS_clean$maxdist >=5),]
 #nrow(SUMMAGPS)
 #[1] 334 # includes two overnight trips, will keep for firs iter or stats
 
-#saveRDS(SUMMAGPS_clean, "data/SUMMAGPS_clean.RDS")
+#saveRDS(SUMMAGPS_clean, "data/SUMMAGPS_clean.RDS") #last save on July 16th 2025
+                                                    # after the fix of totdist in meters to kms
 
 #summary of number of trips
 SUMMAGPS_clean<-readRDS("data/SUMMAGPS_clean.RDS")
