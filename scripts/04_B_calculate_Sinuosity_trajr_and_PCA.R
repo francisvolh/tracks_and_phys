@@ -70,7 +70,7 @@ sins_trips[which(sins_trips$V1 == min(sins_trips$V1, na.rm= TRUE)),]
 sins_trips[which(sins_trips$V1 >1),]
 
 
-SUMMAGPS<-readRDS("data/SUMMAGPS_clean.RDS")
+SUMMAGPS<-SUMMAGPS_clean
 
 
 unique_tripsIDS<- unique(SUMMAGPS$unique_trip)
@@ -119,7 +119,7 @@ ggpubr::ggscatter(glmm_tests#[which( glmm_tests$tottime <8 & glmm_tests$maxdist 
 names(glmm_tests)
 res.pca <- prcomp(glmm_tests[, c("maxdist","tottime","totdist", "sinuos")], scale = TRUE) #, "sinuos" 
 
-png("plots/PCA_fourvars.png", height = 5, width = 5, units = "in" , res = 300)
+png("plots/PCA_fourvarsv2.png", height = 5, width = 5, units = "in" , res = 300)
 
 factoextra::fviz_pca_var(res.pca,
              col.var = "contrib", # Color by contributions to the PC
@@ -145,6 +145,7 @@ factoextra::fviz_pca_ind(res.pca,
              palette = c("#00AFBB", "#E7B800"),
              addEllipses = TRUE # Concentration ellipses
 )
+res.pca <- prcomp(glmm_tests[, c("maxdist","tottime","totdist")], scale = TRUE) #, "sinuos" 
 
 res.var <- factoextra::get_pca_var(res.pca)
 res.var$coord          # Coordinates
@@ -160,7 +161,11 @@ res.ind <- factoextra::get_pca_ind(res.pca)
 
 glmm_tests$PC1 <- res.ind$coord[,1]
 glmm_tests$PC2 <- res.ind$coord[,2]
+#saveRDS(glmm_tests, "data/glmm_testsPCAv2.RDS") # this version had totdist as meters, not kms, so may be diff PCA results (numerically, in the plots they look the same as new version) 
+#also, confirm this is the on withOUT sinuosity included in PC1!!
 
-#saveRDS(glmm_tests, "data/glmm_testsPCAv2.RDS")
-
+#PCA of only totdist, tottime, and maxdist, sinousity remains raw and not on PC
+#saveRDS(glmm_tests, "data/glmm_testsPCAv3.RDS") #v3 is produced on July 16th
+                                                #after fixing issue with totdist in m to kms
+                                
 
